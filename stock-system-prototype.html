@@ -167,10 +167,9 @@
         </div>
         <div class="pda-mode-label">โหมด: <b id="cam-modetxt" style="color:var(--green)">รับเข้า</b></div>
 
-        <div id="cam-viewport" style="position:relative;width:100%;aspect-ratio:4/3;background:#000;border-radius:var(--r2);overflow:hidden;display:flex;align-items:center;justify-content:center;">
-          <video id="cam-video" playsinline muted style="width:100%;height:100%;object-fit:cover;display:none;"></video>
-          <div id="cam-placeholder" style="color:#aaa;font-size:15px;text-align:center;padding:20px;">📷 กดปุ่ม "เปิดกล้อง" ด้านล่าง<br>แล้วส่องไปที่บาร์โค้ดบนสินค้า</div>
-          <div id="cam-frame" style="display:none;position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:70%;height:32%;border:3px solid var(--green);border-radius:10px;box-shadow:0 0 0 2000px rgba(0,0,0,0.35);"></div>
+        <div id="cam-viewport" style="position:relative;width:100%;min-height:240px;background:#000;border-radius:var(--r2);overflow:hidden;">
+          <div id="cam-reader" style="width:100%;"></div>
+          <div id="cam-placeholder" style="position:absolute;top:0;left:0;right:0;bottom:0;color:#aaa;font-size:15px;text-align:center;padding:20px;display:flex;align-items:center;justify-content:center;">📷 กดปุ่ม "เปิดกล้อง" ด้านล่าง<br>แล้วส่องไปที่บาร์โค้ดบนสินค้า</div>
         </div>
 
         <div class="grid" style="grid-template-columns:1fr 1fr;margin-top:12px;">
@@ -349,7 +348,7 @@
   <button data-go="report"><span class="ic">📈</span>รายเดือน</button>
 </nav>
 
-<script src="https://cdnjs.cloudflare.com/ajax/libs/zxing-js-library/0.21.3/index.min.js"></script>
+<script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
 <script>
 /* ============ ฐานข้อมูลกลางจำลอง (แทน Master_SN + Log + Reservations) ============ */
 var DB = {};          // full code -> {product, lot, status:'none'|'in'|'out'|'bad', by}
@@ -556,46 +555,48 @@ function camHandle(text){
   if(navigator.vibrate){ navigator.vibrate(res.ok?40:[50,40,50]); }
   syncAll();
 }
-function zxingLib(){ return (typeof ZXing!=='undefined')?ZXing:((typeof ZXingBrowser!=='undefined')?ZXingBrowser:null); }
 function startCam(){
-  var LIB=zxingLib();
-  if(!LIB){ camResult('err','✕ โหลดตัวอ่านบาร์โค้ดไม่สำเร็จ','ต้องมีอินเทอร์เน็ต'); return; }
+  if(typeof Html5Qrcode==='undefined'){ camResult('err','✕ โหลดตัวอ่านบาร์โค้ดไม่สำเร็จ','เช็คอินเทอร์เน็ต แล้วลองรีเฟรช'); return; }
   if(!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia){ camResult('err','✕ เบราว์เซอร์ไม่รองรับกล้อง','ลองเปิดบนมือถือ'); return; }
   try{
-    camReader=new LIB.BrowserMultiFormatReader();
-  }catch(e){ camResult('err','✕ เริ่มกล้องไม่ได้',e.message); return; }
-  var video=el('cam-video');
-  camReader.decodeFromConstraints(
-    { video:{ facingMode:'environment' } },  // กล้องหลัง
-    video,
-    function(result,err){
-      if(result){ camHandle(result.getText()); }
-    }
+    var fmts;
+    try{
+      fmts=[ Html5QrcodeSupportedFormats.CODE_128, Html5QrcodeSupportedFormats.CODE_39, Html5QrcodeSupportedFormats.EAN_13, Html5QrcodeSupportedFormats.CODE_93 ];
+    }catch(e){ fmts=undefined; }
+    camReader=new Html5Qrcode('cam-reader', fmts?{ verbose:false, formatsToSupport:fmts }:{ verbose:false });
+  }catch(e){ camResult('err','✕ เริ่มตัวอ่านไม่ได้',e.message); return; }
+  var config={ fps:10, qrbox:function(w,h){ var m=Math.min(w,h); return { width:Math.round(Math.min(w*0.85,320)), height:Math.round(m*0.45) }; } };
+  camReader.start(
+    { facingMode:'environment' },   // กล้องหลัง
+    config,
+    function(decodedText){ camHandle(decodedText); },
+    function(errMsg){ /* อ่านไม่เจอในเฟรมนี้ — เงียบไว้ */ }
   ).then(function(){
     camActive=true;
     el('cam-placeholder').style.display='none';
-    el('cam-video').style.display='block';
-    el('cam-frame').style.display='block';
     el('cam-start').disabled=true;
     el('cam-stop').disabled=false;
-    camResult('','กำลังสแกน...','ส่องบาร์โค้ดให้อยู่ในกรอบเขียว');
+    camResult('','กำลังสแกน...','ส่องบาร์โค้ดให้อยู่ในกรอบ');
   }).catch(function(e){
     var msg='✕ เปิดกล้องไม่ได้';
-    if(e && e.name==='NotAllowedError') msg='✕ ไม่ได้อนุญาตให้ใช้กล้อง';
-    if(e && e.name==='NotFoundError') msg='✕ ไม่พบกล้อง';
-    camResult('err',msg,'เปิดผ่านมือถือ + อนุญาตกล้อง');
+    var s=String(e&&e.message||e||'');
+    if(s.indexOf('NotAllowed')>=0||s.indexOf('Permission')>=0) msg='✕ ไม่ได้อนุญาตให้ใช้กล้อง';
+    if(s.indexOf('NotFound')>=0) msg='✕ ไม่พบกล้อง';
+    camResult('err',msg,'ต้องอนุญาตกล้อง • ลองรีเฟรชหน้า');
+    try{ camReader.clear(); }catch(ee){} camReader=null;
   });
 }
 function stopCam(){
   if(camReader){
-    try{ if(typeof camReader.reset==='function') camReader.reset(); }catch(e){}
-    try{ if(typeof camReader.stopContinuousDecode==='function') camReader.stopContinuousDecode(); }catch(e){}
-    camReader=null;
+    var r=camReader; camReader=null;
+    try{
+      if(camActive && typeof r.stop==='function'){
+        r.stop().then(function(){ try{ r.clear(); }catch(e){} }).catch(function(){ try{ r.clear(); }catch(e){} });
+      } else { try{ r.clear(); }catch(e){} }
+    }catch(e){}
   }
   camActive=false;
-  var v=el('cam-video'); if(v){ if(v.srcObject){ try{ v.srcObject.getTracks().forEach(function(t){t.stop();}); }catch(e){} v.srcObject=null; } v.style.display='none'; }
-  var ph=el('cam-placeholder'); if(ph){ ph.style.display='block'; }
-  var fr=el('cam-frame'); if(fr){ fr.style.display='none'; }
+  var ph=el('cam-placeholder'); if(ph){ ph.style.display='flex'; }
   var bs=el('cam-start'); if(bs){ bs.disabled=false; }
   var bp=el('cam-stop'); if(bp){ bp.disabled=true; }
 }
