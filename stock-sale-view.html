@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>เช็คสต็อก — Siam Cooler (สำหรับฝ่ายขาย)</title>
+<style>
+  :root{
+    --bg:#ffffff; --panel:#ffffff; --panel2:#f4f5f7; --line:#e3e6ea;
+    --text:#1f2733; --text2:#56616f; --text3:#8893a0;
+    --green:#1f9d57; --green-bg:rgba(31,157,87,0.11);
+    --blue:#2563a8; --blue-bg:rgba(37,99,168,0.11);
+    --amber:#b07d13; --amber-bg:rgba(176,125,19,0.14);
+    --red:#c0392b; --red-bg:rgba(192,57,43,0.11);
+    --mono:'SF Mono',ui-monospace,'Cascadia Code',Consolas,monospace;
+    --sans:-apple-system,BlinkMacSystemFont,'Segoe UI','Sarabun',sans-serif;
+    --r:14px; --r2:10px;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
+  body{background:var(--bg);color:var(--text);font-family:var(--sans);font-size:17px;line-height:1.55;}
+  .wrap{max-width:780px;margin:0 auto;padding:16px;}
+  header{display:flex;align-items:center;justify-content:space-between;padding:8px 2px 18px;}
+  h1{font-size:21px;font-weight:700;letter-spacing:-0.01em;}
+  .sub{font-size:14px;color:var(--text3);margin-top:2px;}
+  .badge{font-size:12px;background:var(--blue-bg);color:var(--blue);padding:5px 12px;border-radius:20px;font-weight:700;letter-spacing:0.02em;white-space:nowrap;}
+
+  .stats{display:grid;grid-template-columns:repeat(3,1fr);gap:9px;margin-bottom:14px;}
+  .stat{background:var(--panel);border:1px solid var(--line);border-radius:var(--r2);padding:12px 14px;box-shadow:0 1px 3px rgba(0,0,0,0.04);}
+  .stat .l{font-size:13px;color:var(--text3);font-weight:500;}
+  .stat .v{font-size:26px;font-weight:700;margin-top:2px;letter-spacing:-0.02em;}
+  .stat.tap{cursor:pointer;}
+  @media(max-width:560px){.stats{grid-template-columns:1fr 1fr;}}
+
+  .toolbar{display:flex;gap:9px;flex-wrap:wrap;align-items:center;margin-bottom:12px;}
+  input,select{background:var(--panel2);border:1.5px solid var(--line);border-radius:var(--r2);color:var(--text);padding:13px 14px;font-size:16px;font-family:var(--sans);outline:none;transition:border .15s;}
+  input:focus,select:focus{border-color:var(--blue);}
+  .toolbar input,.toolbar select{flex:1;min-width:130px;}
+
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:var(--r);box-shadow:0 1px 3px rgba(0,0,0,0.04);overflow:hidden;}
+  table{width:100%;border-collapse:collapse;font-size:15px;}
+  th{text-align:left;font-weight:600;color:var(--text2);font-size:13px;padding:12px 10px;border-bottom:2px solid var(--line);background:var(--panel2);}
+  td{padding:13px 10px;border-bottom:1px solid var(--line);}
+  tr:last-child td{border-bottom:none;}
+  .mono{font-family:var(--mono);}
+  .r{text-align:right;}
+  .tag{font-size:12px;padding:3px 9px;border-radius:6px;font-weight:700;}
+  .tag.a{background:var(--amber-bg);color:var(--amber);}
+  .tag.r{background:var(--red-bg);color:var(--red);}
+  .bar{height:9px;border-radius:5px;background:var(--panel2);overflow:hidden;display:flex;min-width:60px;}
+  .muted{color:var(--text3);font-size:14px;text-align:center;padding:22px;}
+  .note{font-size:13px;color:var(--text3);margin-top:10px;text-align:center;}
+  .updated{font-size:12px;color:var(--text3);text-align:center;margin-top:4px;}
+  .legend{display:flex;gap:16px;justify-content:center;margin-top:12px;font-size:13px;color:var(--text2);flex-wrap:wrap;}
+  .legend span{display:inline-flex;align-items:center;gap:5px;}
+  .dot{width:10px;height:10px;border-radius:50%;display:inline-block;}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div>
+      <h1>เช็คสต็อกสินค้า</h1>
+      <div class="sub">Siam Cooler — สำหรับฝ่ายขาย</div>
+    </div>
+    <span class="badge">👁 ดูอย่างเดียว</span>
+  </header>
+
+  <div class="stats">
+    <div class="stat"><div class="l">ขายได้จริงรวม</div><div class="v" style="color:var(--green)" id="k-in">0</div></div>
+    <div class="stat"><div class="l">ติดจองรวม</div><div class="v" style="color:var(--blue)" id="k-resv">0</div></div>
+    <div class="stat tap" id="k-low-card"><div class="l" style="color:var(--amber)">เหลือน้อย ⚠</div><div class="v" style="color:var(--amber)" id="k-low">0</div></div>
+  </div>
+
+  <div class="toolbar">
+    <input id="search" placeholder="🔍 ค้นหาสินค้า เช่น WFP">
+    <select id="filter">
+      <option value="all">ทุกสถานะ</option>
+      <option value="low">เฉพาะเหลือน้อย</option>
+      <option value="zero">เฉพาะที่หมด</option>
+      <option value="ok">เฉพาะที่พอขาย</option>
+    </select>
+    <select id="sort">
+      <option value="low-first">เหลือน้อย→มาก</option>
+      <option value="high-first">เหลือมาก→น้อย</option>
+      <option value="name">ชื่อ A-Z</option>
+    </select>
+  </div>
+
+  <div class="card">
+    <table>
+      <thead><tr><th>สินค้า</th><th class="r">คงเหลือ</th><th class="r">ติดจอง</th><th class="r">ขายได้จริง</th><th style="width:96px">สถานะ</th></tr></thead>
+      <tbody id="rows"></tbody>
+    </table>
+    <div id="empty" class="muted" style="display:none;">ไม่พบสินค้าตามเงื่อนไข</div>
+  </div>
+
+  <div class="legend">
+    <span><i class="dot" style="background:var(--green)"></i> พอขาย</span>
+    <span><i class="dot" style="background:var(--amber)"></i> เหลือน้อย</span>
+    <span><i class="dot" style="background:var(--red)"></i> หมด</span>
+  </div>
+  <div class="note" id="note"></div>
+  <div class="updated" id="updated"></div>
+</div>
+
+<script>
+/* ============================================================
+   หน้าฝ่ายขาย — ดูยอดคงเหลืออย่างเดียว (READ-ONLY)
+   ไม่มีปุ่มยิง / ลงล็อต / แก้ไข / ลบ / รีเซ็ต ใด ๆ
+   ------------------------------------------------------------
+   ในระบบจริง: ข้อมูลชุดนี้จะดึงมาจาก Google Sheets เดียวกับ
+   ระบบหลัก (ผ่าน Apps Script Web App แบบอ่านอย่างเดียว)
+   ตอนนี้ใช้ข้อมูลจำลองเพื่อให้เห็นหน้าตา
+   ============================================================ */
+
+// ข้อมูลจำลอง: คงเหลือจริงในคลัง (onhand) + ยอดจองที่รอส่ง (reserved) + เกณฑ์เตือน
+// ขายได้จริง (available) = onhand - reserved คำนวณตอนแสดง
+var STOCK=[
+  {code:'WFP-3500', onhand:142, reserved:30,  threshold:50},
+  {code:'WFP-2200', onhand:50,  reserved:42,  threshold:30},
+  {code:'ABS-SC8',  onhand:95,  reserved:0,   threshold:100},
+  {code:'ABS-CX5',  onhand:210, reserved:60,  threshold:50},
+  {code:'RO-900',   onhand:20,  reserved:20,  threshold:20},
+  {code:'UV-750',   onhand:18,  reserved:0,   threshold:20},
+  {code:'CER-450',  onhand:340, reserved:120, threshold:40},
+  {code:'MIN-X3',   onhand:27,  reserved:5,   threshold:25},
+  {code:'ALK-Z9',   onhand:64,  reserved:0,   threshold:30},
+  {code:'PRO-5000', onhand:25,  reserved:20,  threshold:15}
+];
+
+var state={search:'',filter:'all',sort:'low-first'};
+function el(id){return document.getElementById(id);}
+function availOf(s){ return s.onhand - s.reserved; }
+
+function statusOf(s){
+  var avail=availOf(s);
+  if(avail<=0) return 'zero';
+  if(avail<=s.threshold) return 'low';
+  return 'ok';
+}
+
+function render(){
+  var totAvail=0,totReserved=0,low=0;
+  STOCK.forEach(function(s){ var a=availOf(s); totAvail+=Math.max(0,a); totReserved+=s.reserved; if(a<=s.threshold) low++; });
+  el('k-in').textContent=totAvail.toLocaleString();
+  el('k-resv').textContent=totReserved.toLocaleString();
+  el('k-low').textContent=low;
+
+  var list=STOCK.filter(function(s){
+    if(state.search && s.code.indexOf(state.search.toUpperCase())<0) return false;
+    var st=statusOf(s);
+    if(state.filter==='low') return st==='low';
+    if(state.filter==='zero') return st==='zero';
+    if(state.filter==='ok') return st==='ok';
+    return true;
+  }).slice().sort(function(a,b){
+    if(state.sort==='low-first') return availOf(a)-availOf(b);
+    if(state.sort==='high-first') return availOf(b)-availOf(a);
+    if(state.sort==='name') return a.code<b.code?-1:1;
+    return 0;
+  });
+
+  var tb=el('rows');
+  if(!list.length){ tb.innerHTML=''; el('empty').style.display='block'; el('note').textContent=''; return; }
+  el('empty').style.display='none';
+
+  tb.innerHTML=list.map(function(s){
+    var avail=availOf(s), st=statusOf(s);
+    var col = st==='zero'?'var(--red)':(st==='low'?'var(--amber)':'var(--text)');
+    var tag = st==='zero'?'<span class="tag r">หมด</span>':(st==='low'?'<span class="tag a">เหลือน้อย</span>':'<span style="color:var(--text3);font-size:13px">พอขาย</span>');
+    var resvCell = s.reserved>0 ? '<span style="color:var(--blue)">'+s.reserved.toLocaleString()+'</span>' : '<span style="color:var(--text3)">—</span>';
+    return '<tr>'+
+      '<td class="mono" style="font-size:15px;">'+s.code+'</td>'+
+      '<td class="r" style="color:var(--text2)">'+s.onhand.toLocaleString()+'</td>'+
+      '<td class="r">'+resvCell+'</td>'+
+      '<td class="r" style="font-weight:700;font-size:18px;color:'+col+'">'+avail.toLocaleString()+'</td>'+
+      '<td>'+tag+'</td>'+
+    '</tr>';
+  }).join('');
+  el('note').textContent='แสดง '+list.length+' จาก '+STOCK.length+' รายการ • ติดจองรวม '+totReserved.toLocaleString()+' ชิ้น';
+}
+
+el('search').addEventListener('input',function(){state.search=this.value.trim();render();});
+el('filter').addEventListener('change',function(){state.filter=this.value;render();});
+el('sort').addEventListener('change',function(){state.sort=this.value;render();});
+el('k-low-card').onclick=function(){ el('filter').value='low'; state.filter='low'; render(); };
+
+// เวลาอัปเดต (ในระบบจริงคือเวลาที่ดึงจาก Sheets ล่าสุด)
+var now=new Date();
+el('updated').textContent='ข้อมูล ณ '+now.toLocaleString('th-TH',{hour12:false});
+
+render();
+</script>
+</body>
+</html>

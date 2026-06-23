@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ระบบสต็อก Siam Cooler — เมนูหลัก</title>
+<style>
+  :root{
+    --bg:#ffffff; --panel:#ffffff; --panel2:#f4f5f7; --line:#e3e6ea;
+    --text:#1f2733; --text2:#56616f; --text3:#8893a0;
+    --blue:#2563a8; --blue-bg:rgba(37,99,168,0.08);
+    --green:#1f9d57; --green-bg:rgba(31,157,87,0.08);
+    --sans:-apple-system,BlinkMacSystemFont,'Segoe UI','Sarabun',sans-serif;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;}
+  body{background:var(--bg);color:var(--text);font-family:var(--sans);font-size:17px;line-height:1.55;}
+  .wrap{max-width:600px;margin:0 auto;padding:28px 18px;}
+  h1{font-size:24px;font-weight:700;}
+  .sub{font-size:14px;color:var(--text3);margin-top:3px;margin-bottom:26px;}
+  a.tile{display:block;text-decoration:none;color:inherit;background:var(--panel);border:1.5px solid var(--line);border-radius:16px;padding:20px 22px;margin-bottom:14px;transition:all .15s;box-shadow:0 1px 3px rgba(0,0,0,0.04);}
+  a.tile:hover{border-color:var(--blue);transform:translateY(-1px);box-shadow:0 4px 14px rgba(0,0,0,0.08);}
+  .tile .ic{font-size:30px;}
+  .tile .t{font-size:19px;font-weight:600;margin-top:8px;}
+  .tile .d{font-size:14px;color:var(--text2);margin-top:4px;}
+  .tile.main{border-color:var(--blue);background:var(--blue-bg);}
+  .tile.sale{border-color:var(--green);background:var(--green-bg);}
+  .note{font-size:13px;color:var(--text3);margin-top:18px;line-height:1.7;}
+  .badge{display:inline-block;font-size:11px;background:var(--panel2);color:var(--text3);padding:3px 9px;border-radius:20px;margin-top:6px;}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>ระบบสต็อกบาร์โค้ด</h1>
+  <div class="sub">Siam Cooler Industry — prototype สำหรับทดสอบ</div>
+
+  <a class="tile main" href="stock-system-prototype.html">
+    <div class="ic">📲</div>
+    <div class="t">ระบบหลัก (คลัง)</div>
+    <div class="d">ยิงเข้า/ออก, กล้อง, รับล็อต, คงเหลือ, จอง, รายเดือน, ไส้กรอง/เซ็ต, สร้างบาร์โค้ด</div>
+    <span class="badge">สำหรับพนักงานคลัง</span>
+  </a>
+
+  <a class="tile sale" href="stock-sale-view.html">
+    <div class="ic">👁</div>
+    <div class="t">หน้าฝ่ายขาย (ดูอย่างเดียว)</div>
+    <div class="d">ดูยอดคงเหลือ ขายได้จริง ติดจอง — แก้ไขอะไรไม่ได้</div>
+    <span class="badge">สำหรับ Sale</span>
+  </a>
+
+  <div class="note">
+    เปิดบนมือถือเพื่อทดสอบกล้องยิงบาร์โค้ด (ต้องผ่าน https เช่น GitHub Pages) • ข้อมูลเป็นตัวจำลอง รีเฟรชแล้วเริ่มใหม่ • ระบบจริงจะเก็บถาวรบน Google Sheets / AppSheet
+  </div>
+</div>
+</body>
+</html>
