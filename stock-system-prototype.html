@@ -177,6 +177,14 @@
           <button class="btn" id="cam-stop" disabled>ปิดกล้อง</button>
         </div>
 
+        <div style="margin-top:14px;padding-top:14px;border-top:1px dashed var(--line);">
+          <div style="font-size:13px;color:var(--text2);margin-bottom:8px;">⌨ กรอกรหัสเอง (เผื่อป้าย SN ขาด/บาร์โค้ดเสีย)</div>
+          <div style="display:flex;gap:8px;">
+            <input id="cam-manual" class="mono" placeholder="พิมพ์ SN เช่น ABS-SC8 26060001" autocomplete="off" style="flex:1;">
+            <button class="btn primary" id="cam-manual-fire" style="white-space:nowrap;">ยืนยัน</button>
+          </div>
+        </div>
+
         <div class="pda-result" id="cam-result"><div class="big">พร้อมสแกน</div><div class="sn">ลงทะเบียน + รับเข้าในแท็บ "รับล็อต" ก่อน</div></div>
         <div class="pda-counter">เซสชันนี้ยิงไปแล้ว <b id="cam-count">0</b> ครั้ง</div>
       </div>
@@ -308,31 +316,28 @@
     </div>
   </section>
 
-  <!-- 6. MONTHLY REPORT -->
+  <!-- 6. REPORT รับ-ออก -->
   <section class="view" data-view="report">
     <div class="toolbar">
-      <span style="font-size:13px;color:var(--text2)">เดือน:</span>
-      <select id="rp-month" style="flex:0 1 auto;font-weight:600;"></select>
-      <span class="seg" style="margin-left:auto;"><button id="rp-tab-sum" class="on">ภาพรวม</button><button id="rp-tab-det">รายการละเอียด</button></span>
+      <span style="font-size:13px;color:var(--text2)">ช่วง:</span>
+      <span class="seg"><button id="rp-today" class="on">วันนี้</button><button id="rp-month-btn">เดือนนี้</button><button id="rp-all">ทั้งหมด</button></span>
+    </div>
+    <div class="toolbar" style="margin-top:-4px;">
+      <span style="font-size:13px;color:var(--text2)">ทิศทาง:</span>
+      <span class="seg"><button id="rp-both" class="on">รับ+ออก</button><button id="rp-in">รับเข้า</button><button id="rp-out">จ่ายออก</button></span>
     </div>
     <div class="stats" style="grid-template-columns:repeat(3,1fr);">
-      <div class="stat"><div class="l">จ่ายออกเดือนนี้</div><div class="v" style="color:var(--blue)" id="rp-total">0</div><div class="l" id="rp-cmp"></div></div>
+      <div class="stat"><div class="l" style="color:var(--green)">รับเข้า</div><div class="v" style="color:var(--green)" id="rp-cin">0</div></div>
+      <div class="stat"><div class="l" style="color:var(--blue)">จ่ายออก</div><div class="v" style="color:var(--blue)" id="rp-cout">0</div></div>
       <div class="stat"><div class="l">ชนิดสินค้า</div><div class="v" id="rp-sku">0</div></div>
-      <div class="stat"><div class="l">ขายดีสุด</div><div class="v mono" style="font-size:14px;margin-top:5px;" id="rp-top">—</div><div class="l" id="rp-topn"></div></div>
     </div>
-    <div id="rp-sum">
-      <div class="card"><div class="card-t">สินค้าที่จ่ายออก (มาก→น้อย)</div><div id="rp-sum-rows"></div></div>
+    <div class="toolbar">
+      <input id="rp-search" placeholder="🔍 ค้นหา SN / รหัสสินค้า" style="flex:1;">
+      <button class="btn sm" id="rp-expand">กางทั้งหมด</button>
+      <button class="btn sm" id="rp-collapse">พับทั้งหมด</button>
     </div>
-    <div id="rp-det" style="display:none;">
-      <div class="toolbar"><input id="rp-search" placeholder="🔍 ค้นหา SN / รหัส"></div>
-      <div class="card" style="padding:0;overflow:hidden;">
-        <table>
-          <thead><tr><th>วันที่</th><th>SN</th><th>สินค้า</th><th>อ้างอิง</th></tr></thead>
-          <tbody id="rp-det-rows"></tbody>
-        </table>
-      </div>
-      <div class="hint" id="rp-det-note"></div>
-    </div>
+    <div id="rp-groups"></div>
+    <div class="hint" id="rp-note"></div>
   </section>
 
   <!-- 8. GENERATE BARCODE (สำหรับทดสอบ) -->
@@ -465,6 +470,10 @@ var pdaCount = 0;
 
 function pad(n){ return ('0000'+n).slice(-4); }
 function nowT(){ return new Date().toLocaleTimeString('th-TH',{hour12:false}); }
+function nowTS(){ return Date.now(); }   // timestamp เต็ม ms สำหรับกรองตามวัน/เดือน
+function sameDay(ts){ var d=new Date(ts), n=new Date(); return d.getFullYear()===n.getFullYear()&&d.getMonth()===n.getMonth()&&d.getDate()===n.getDate(); }
+function sameMonth(ts){ var d=new Date(ts), n=new Date(); return d.getFullYear()===n.getFullYear()&&d.getMonth()===n.getMonth(); }
+function fmtDate(ts){ var d=new Date(ts); return ('0'+d.getDate()).slice(-2)+'/'+('0'+(d.getMonth()+1)).slice(-2)+' '+('0'+d.getHours()).slice(-2)+':'+('0'+d.getMinutes()).slice(-2); }
 // สร้างรหัสตามรูปแบบจริงของโรงงาน: สินค้า + YYMM + running(4หลัก) ติดกัน เช่น ABS-SC826020336
 function buildCode(p,l,r){ return p+l+r; }
 // parser ใหม่: ตัดเว้นวรรค/ขีดทิ้ง แล้วจับ 8 ตัวเลขท้าย = YYMM(4)+running(4) ที่เหลือหน้า=สินค้า
@@ -540,8 +549,8 @@ el('lot-reg').onclick=function(){
 el('lot-recv').onclick=function(){
   var p=el('lot-prod').value.trim().toUpperCase(), l=el('lot-lot').value.trim(), done=0;
   for(var k in DB){ if(DB[k].product===p&&DB[k].lot===l&&DB[k].status==='none'){ DB[k].status='in'; done++;
-    LOG.unshift({t:nowT(),user:'ระบบ',full:k,m:'IN',ok:true,note:'รับเข้าทั้งล็อต',ref:'รับเข้าทั้งล็อต'}); } }
-  if(LOG.length>200) LOG=LOG.slice(0,200);
+    LOG.unshift({t:nowT(),ts:nowTS(),user:'ระบบ',full:k,m:'IN',ok:true,note:'รับเข้าทั้งล็อต',ref:'รับเข้าทั้งล็อต'}); } }
+  if(LOG.length>10000) LOG=LOG.slice(0,10000);
   lotFlash('✓ รับเข้า '+p+'-'+l+' จำนวน '+done+' รายการ'+(done===0?' (ไม่มีรายการรอรับ)':''),'info');
   renderLotTable(); syncAll();
 };
@@ -638,8 +647,8 @@ function pdaFire(raw){
   var user=curUser||'(ไม่ระบุ)';
   var res=processCore(user,raw,pdaMode);
   pdaResult(res.cls,res.msg,res.sn);
-  LOG.unshift({t:nowT(),user:user,full:res.sn,m:res.m,ok:res.ok,note:res.note,ref:''});
-  if(LOG.length>200) LOG.pop();
+  LOG.unshift({t:nowT(),ts:nowTS(),user:user,full:res.sn,m:res.m,ok:res.ok,note:res.note,ref:''});
+  if(LOG.length>10000) LOG.pop();
   pdaCount++; el('pda-count').textContent=pdaCount;
   el('pda-scan').value='';
   if(navigator.vibrate){ navigator.vibrate(res.ok?30:[40,30,40]); }
@@ -674,8 +683,8 @@ function camHandle(text){
   var user=curUser||'(ไม่ระบุ)';
   var res=processCore(user,text,camMode);
   camResult(res.cls,res.msg,res.sn);
-  LOG.unshift({t:nowT(),user:user,full:res.sn,m:res.m,ok:res.ok,note:res.note,ref:''});
-  if(LOG.length>200) LOG.pop();
+  LOG.unshift({t:nowT(),ts:nowTS(),user:user,full:res.sn,m:res.m,ok:res.ok,note:res.note,ref:''});
+  if(LOG.length>10000) LOG.pop();
   pdaCount++; el('cam-count').textContent=pdaCount;
   if(navigator.vibrate){ navigator.vibrate(res.ok?40:[50,40,50]); }
   syncAll();
@@ -727,6 +736,23 @@ function stopCam(){
 }
 el('cam-start') && (el('cam-start').onclick=startCam);
 el('cam-stop') && (el('cam-stop').onclick=function(){ stopCam(); camResult('','หยุดสแกนแล้ว','กดเปิดกล้องเพื่อสแกนต่อ'); });
+// ยิง SN แบบกรอกเอง (manual) — ใช้ตรรกะตัดสต็อกเดียวกับกล้อง แต่ไม่ติด debounce
+function camManualFire(){
+  var text=(el('cam-manual').value||'').trim();
+  if(!text){ camResult('err','✕ พิมพ์รหัส SN ก่อน',''); return; }
+  var user=curUser||'(ไม่ระบุ)';
+  var res=processCore(user,text,camMode);
+  camResult(res.cls,res.msg,res.sn);
+  LOG.unshift({t:nowT(),ts:nowTS(),user:user,full:res.sn,m:res.m,ok:res.ok,note:(res.note?res.note+' ':'')+'(กรอกเอง)',ref:''});
+  if(LOG.length>10000) LOG.pop();
+  pdaCount++; el('cam-count').textContent=pdaCount;
+  if(navigator.vibrate){ navigator.vibrate(res.ok?40:[50,40,50]); }
+  el('cam-manual').value='';
+  el('cam-manual').focus();
+  syncAll();
+}
+el('cam-manual-fire') && (el('cam-manual-fire').onclick=camManualFire);
+el('cam-manual') && el('cam-manual').addEventListener('keydown',function(e){ if(e.key==='Enter') camManualFire(); });
 
 /* ============ STOCK SUMMARY ============ */
 var sState={search:'',filter:'all',sort:'low-first'};
@@ -926,8 +952,8 @@ function deliver(id){
   // หยิบ SN ที่อยู่ในสต็อกของสินค้านั้น จำนวนเท่าที่จอง มายิงออก
   var picked=0;
   for(var k in DB){ if(picked>=r.qty)break; if(DB[k].product===r.product&&DB[k].status==='in'){ DB[k].status='out'; picked++;
-    LOG.unshift({t:nowT(),user:'ส่งจอง',full:k,m:'OUT',ok:true,note:'ส่งมอบจอง '+r.cust,ref:r.cust}); } }
-  if(LOG.length>200) LOG=LOG.slice(0,200);
+    LOG.unshift({t:nowT(),ts:nowTS(),user:'ส่งจอง',full:k,m:'OUT',ok:true,note:'ส่งมอบจอง '+r.cust,ref:r.cust}); } }
+  if(LOG.length>10000) LOG=LOG.slice(0,10000);
   r.status='ส่งแล้ว';
   if(editingResvId===id) exitEditMode();
   renderResv(); syncAll();
@@ -960,68 +986,110 @@ function rvFlash(msg,kind){ var f=el('rv-flash'); f.textContent=msg; f.className
 el('pol-allow').onclick=function(){ policy='allow'; this.classList.add('on'); el('pol-block').classList.remove('on'); };
 el('pol-block').onclick=function(){ policy='block'; this.classList.add('on'); el('pol-allow').classList.remove('on'); };
 
-/* ============ MONTHLY REPORT (จำลองจาก LOG OUT จริง + เดือนตัวอย่าง) ============ */
-var DEMO_MONTHS=[
-  {key:'2604',label:'เม.ย. 2569',count:210},
-  {key:'2605',label:'พ.ค. 2569',count:265}
-];
-var demoData={};
-(function(){
-  var skus=[['WFP-3500',9],['WFP-2200',7],['ABS-SC8',6],['RO-900',5],['UV-750',4],['ABS-CX5',4],['CER-450',3]];
-  var refs=['SO-2401','SO-2402','หน้าร้าน','ตัวแทนเหนือ','ลูกค้าส่ง','โครงการ A'];
-  var seed=42; function rnd(){seed=(seed*1103515245+12345)&0x7fffffff;return seed/0x7fffffff;}
-  function wsku(){var t=0;skus.forEach(function(s){t+=s[1];});var r=rnd()*t;for(var i=0;i<skus.length;i++){r-=skus[i][1];if(r<=0)return skus[i][0];}return skus[0][0];}
-  DEMO_MONTHS.forEach(function(m){var rows=[];for(var i=0;i<m.count;i++){var prod=wsku(),day=1+Math.floor(rnd()*28),lot=(rnd()<0.5?'2602':'2604');
-    rows.push({day:day,date:pad(day).slice(2)+'/'+m.key.slice(2)+'/'+m.key.slice(0,2),product:prod,full:prod+lot+pad(1+Math.floor(rnd()*500)),ref:refs[Math.floor(rnd()*refs.length)]});}
-    rows.sort(function(a,b){return b.day-a.day;}); demoData[m.key]=rows;});
-})();
-function currentMonthKey(){ var d=new Date(); return pad((d.getFullYear()+543)%100).slice(2)+pad(d.getMonth()+1).slice(2); }
-function liveMonthRows(){
-  // ดึง OUT จริงจาก LOG เดือนปัจจุบัน
-  return LOG.filter(function(r){return r.m==='OUT'&&r.ok;}).map(function(r){
-    var p=parseCode(r.full); return {date:'วันนี้',product:p?p.product:'?',full:r.full,ref:r.ref||'-'}; });
+/* ============ REPORT รับ-ออก (จาก Log จริง) ============ */
+var rpRange='today';   // today | month | all
+var rpDir='both';      // both | in | out
+var rpOpen={};         // product -> กางอยู่ไหม (จำสถานะระหว่าง re-render)
+function rpFilteredLog(){
+  return LOG.filter(function(r){
+    if(!r.ok) return false;                          // เฉพาะรายการสำเร็จ
+    if(r.m!=='IN'&&r.m!=='OUT') return false;        // เฉพาะรับเข้า/จ่ายออก (ไม่เอา BAD)
+    if(rpRange==='today' && !(r.ts&&sameDay(r.ts))) return false;
+    if(rpRange==='month' && !(r.ts&&sameMonth(r.ts))) return false;
+    if(rpDir==='in' && r.m!=='IN') return false;
+    if(rpDir==='out' && r.m!=='OUT') return false;
+    return true;
+  });
 }
-var rpTab='sum', rpMonth=null;
-function buildMonthList(){
-  var sel=el('rp-month'); var live=currentMonthKey();
-  var opts=DEMO_MONTHS.map(function(m){return {key:m.key,label:m.label};});
-  opts.push({key:live,label:'เดือนนี้ (สด)'});
-  sel.innerHTML=opts.map(function(o){return '<option value="'+o.key+'">'+o.label+'</option>';}).join('');
-  if(!rpMonth) rpMonth=live; sel.value=rpMonth;
-}
-function monthRows(key){ if(key===currentMonthKey()) return liveMonthRows(); return demoData[key]||[]; }
 function renderReport(){
-  buildMonthList();
-  var rows=monthRows(rpMonth);
-  var byP={}; rows.forEach(function(r){byP[r.product]=(byP[r.product]||0)+1;});
-  var list=Object.keys(byP).map(function(p){return {p:p,n:byP[p]};}).sort(function(a,b){return b.n-a.n;});
-  el('rp-total').textContent=rows.length.toLocaleString();
-  el('rp-sku').textContent=list.length;
-  if(list.length){el('rp-top').textContent=list[0].p;el('rp-topn').textContent=list[0].n+' ชิ้น';}else{el('rp-top').textContent='—';el('rp-topn').textContent='';}
-  // compare กับเดือนตัวอย่างก่อนหน้า
-  var idx=DEMO_MONTHS.map(function(m){return m.key;}).indexOf(rpMonth);
-  if(idx>0){ var prev=demoData[DEMO_MONTHS[idx-1].key].length, diff=rows.length-prev, pct=prev?Math.round(diff/prev*100):0;
-    el('rp-cmp').innerHTML='<span style="color:'+(diff>=0?'var(--green)':'var(--red)')+'">'+(diff>=0?'▲':'▼')+' '+Math.abs(pct)+'%</span> จากเดือนก่อน'; }
-  else el('rp-cmp').textContent='';
-  var max=list.length?list[0].n:1;
-  el('rp-sum-rows').innerHTML=list.length?list.map(function(x){
-    var pct=Math.round(x.n/max*100), share=Math.round(x.n/rows.length*100);
-    return '<div style="display:flex;align-items:center;gap:10px;padding:7px 2px;border-bottom:1px solid var(--line)"><div style="width:100px" class="mono">'+x.p+'</div><div style="flex:1"><div class="bar" style="height:18px"><div style="width:'+pct+'%;background:var(--blue);opacity:0.85"></div></div></div><div style="width:84px;text-align:right"><b>'+x.n+'</b> <span style="color:var(--text3);font-size:11px">('+share+'%)</span></div></div>';
-  }).join(''):'<div class="muted">เดือนนี้ยังไม่มีการจ่ายออก — ลองยิงออกในแท็บ PDA หรือเลือกเดือนตัวอย่าง</div>';
-  renderRpDetail();
+  var rows=rpFilteredLog();
+  var q=(el('rp-search').value||'').trim().toUpperCase();
+  // จัดกลุ่มตามสินค้า
+  var groups={};   // product -> {in:[], out:[]}
+  var cin=0,cout=0;
+  rows.forEach(function(r){
+    var p=parseCode(r.full);
+    var prod=p?p.product:(r.full||'?');
+    var sn=p?p.full:r.full;
+    if(q && prod.indexOf(q)<0 && sn.indexOf(q)<0) return;
+    if(!groups[prod]) groups[prod]={in:[],out:[]};
+    if(r.m==='IN'){ groups[prod].in.push({sn:sn,ts:r.ts,user:r.user,note:r.note}); cin++; }
+    else { groups[prod].out.push({sn:sn,ts:r.ts,user:r.user,note:r.note,ref:r.ref}); cout++; }
+  });
+  el('rp-cin').textContent=cin.toLocaleString();
+  el('rp-cout').textContent=cout.toLocaleString();
+  el('rp-sku').textContent=Object.keys(groups).length;
+
+  var prods=Object.keys(groups).sort();
+  if(!prods.length){
+    el('rp-groups').innerHTML='<div class="muted">ไม่มีรายการในช่วงที่เลือก — ลองยิงเข้า/ออกในแท็บ PDA หรือเปลี่ยนช่วงเป็น "ทั้งหมด"</div>';
+    el('rp-note').textContent=''; return;
+  }
+  function snList(arr,color){
+    // เรียง SN
+    arr.sort(function(a,b){ return a.sn<b.sn?-1:(a.sn>b.sn?1:0); });
+    var CAP=100, shown=arr.slice(0,CAP);
+    var h=shown.map(function(x){
+      var t=x.ts?fmtDate(x.ts):'';
+      return '<div style="display:flex;justify-content:space-between;gap:8px;padding:4px 0;border-bottom:1px solid var(--line);">'+
+        '<span class="mono" style="color:'+color+';font-size:13.5px">'+x.sn+'</span>'+
+        '<span style="color:var(--text3);font-size:12px;white-space:nowrap">'+t+(x.user?' · '+x.user:'')+'</span></div>';
+    }).join('');
+    if(arr.length>CAP){ h+='<div style="padding:8px 0 2px;font-size:12.5px;color:var(--text3);text-align:center;">… แสดง '+CAP+' จากทั้งหมด '+arr.length+' รายการ (ใช้ช่องค้นหาเพื่อกรองให้แคบลง)</div>'; }
+    return h;
+  }
+  el('rp-groups').innerHTML=prods.map(function(prod){
+    var g=groups[prod];
+    var open=rpOpen[prod]===true;   // เริ่มต้นพับ (false) จำสถานะที่ผู้ใช้กางไว้
+    var body='';
+    if(g.in.length){
+      body+='<div style="font-size:12px;color:var(--green);font-weight:600;margin:6px 0 2px;">▼ รับเข้า ('+g.in.length+')</div>'+snList(g.in,'var(--text)');
+    }
+    if(g.out.length){
+      body+='<div style="font-size:12px;color:var(--blue);font-weight:600;margin:10px 0 2px;">▲ จ่ายออก ('+g.out.length+')</div>'+snList(g.out,'var(--text)');
+    }
+    return '<div class="card" style="padding:0;margin-bottom:12px;overflow:hidden;">'+
+      '<div class="rp-head" data-prod="'+prod+'" style="display:flex;justify-content:space-between;align-items:center;gap:8px;padding:14px 16px;cursor:pointer;user-select:none;">'+
+        '<span style="display:flex;align-items:center;gap:9px;">'+
+          '<span class="rp-arrow" style="font-size:13px;color:var(--text3);transition:transform .15s;transform:rotate('+(open?'90deg':'0deg')+');">▶</span>'+
+          '<span class="mono" style="font-size:16px;font-weight:700;">'+prod+'</span>'+
+        '</span>'+
+        '<span style="font-size:13px;white-space:nowrap;">'+
+          (g.in.length?'<span class="tag g" style="margin-right:5px">รับ '+g.in.length+'</span>':'')+
+          (g.out.length?'<span class="tag b">ออก '+g.out.length+'</span>':'')+
+        '</span></div>'+
+      '<div class="rp-body" style="padding:'+(open?'0 16px 14px':'0 16px')+';max-height:'+(open?'none':'0')+';overflow:hidden;">'+body+'</div>'+
+    '</div>';
+  }).join('');
+  // ผูก toggle พับ/กาง
+  el('rp-groups').querySelectorAll('.rp-head').forEach(function(head){
+    head.onclick=function(){
+      var prod=this.getAttribute('data-prod');
+      rpOpen[prod]=!rpOpen[prod];
+      var body=this.parentNode.querySelector('.rp-body');
+      var arrow=this.querySelector('.rp-arrow');
+      if(rpOpen[prod]){ body.style.maxHeight='none'; body.style.padding='0 16px 14px'; arrow.style.transform='rotate(90deg)'; }
+      else { body.style.maxHeight='0'; body.style.padding='0 16px'; arrow.style.transform='rotate(0deg)'; }
+    };
+  });
+  var rangeTxt={today:'วันนี้',month:'เดือนนี้',all:'ทั้งหมด'}[rpRange];
+  el('rp-note').textContent='ช่วง: '+rangeTxt+' • รับเข้า '+cin+' · จ่ายออก '+cout+' รายการ • แตะหัวสินค้าเพื่อย่อ/ขยาย';
 }
-function renderRpDetail(){
-  var rows=monthRows(rpMonth), q=(el('rp-search').value||'').trim().toUpperCase();
-  var f=rows.filter(function(r){return !q||r.full.indexOf(q)>=0||r.product.indexOf(q)>=0;});
-  el('rp-det-rows').innerHTML=f.length?f.map(function(r){
-    return '<tr><td style="color:var(--text2)">'+r.date+'</td><td class="mono">'+r.full+'</td><td class="mono" style="color:var(--text2)">'+r.product+'</td><td style="color:var(--text3)">'+r.ref+'</td></tr>';
-  }).join(''):'<tr><td colspan="4" class="muted">ไม่มีรายการ</td></tr>';
-  el('rp-det-note').textContent='แสดง '+f.length+' จาก '+rows.length+' รายการ';
+el('rp-search').addEventListener('input',renderReport);
+el('rp-today').onclick=function(){rpRange='today';this.classList.add('on');el('rp-month-btn').classList.remove('on');el('rp-all').classList.remove('on');renderReport();};
+el('rp-month-btn').onclick=function(){rpRange='month';this.classList.add('on');el('rp-today').classList.remove('on');el('rp-all').classList.remove('on');renderReport();};
+el('rp-all').onclick=function(){rpRange='all';this.classList.add('on');el('rp-today').classList.remove('on');el('rp-month-btn').classList.remove('on');renderReport();};
+el('rp-both').onclick=function(){rpDir='both';this.classList.add('on');el('rp-in').classList.remove('on');el('rp-out').classList.remove('on');renderReport();};
+el('rp-in').onclick=function(){rpDir='in';this.classList.add('on');el('rp-both').classList.remove('on');el('rp-out').classList.remove('on');renderReport();};
+el('rp-out').onclick=function(){rpDir='out';this.classList.add('on');el('rp-both').classList.remove('on');el('rp-in').classList.remove('on');renderReport();};
+el('rp-expand').onclick=function(){ rpFilteredProds().forEach(function(p){ rpOpen[p]=true; }); renderReport(); };
+el('rp-collapse').onclick=function(){ rpOpen={}; renderReport(); };
+function rpFilteredProds(){
+  var rows=rpFilteredLog(), q=(el('rp-search').value||'').trim().toUpperCase(), set={};
+  rows.forEach(function(r){ var p=parseCode(r.full); var prod=p?p.product:(r.full||'?'); var sn=p?p.full:r.full;
+    if(q && prod.indexOf(q)<0 && sn.indexOf(q)<0) return; set[prod]=1; });
+  return Object.keys(set);
 }
-el('rp-month').addEventListener('change',function(){rpMonth=this.value;renderReport();});
-el('rp-search').addEventListener('input',renderRpDetail);
-el('rp-tab-sum').onclick=function(){rpTab='sum';this.classList.add('on');el('rp-tab-det').classList.remove('on');el('rp-sum').style.display='';el('rp-det').style.display='none';};
-el('rp-tab-det').onclick=function(){rpTab='det';this.classList.add('on');el('rp-tab-sum').classList.remove('on');el('rp-det').style.display='';el('rp-sum').style.display='none';};
 
 /* ============ GENERATE BARCODE (ทดสอบ) ============ */
 function makeBarcodeInto(box,code,displayText){
@@ -1120,8 +1188,8 @@ function fDoDeliver(sn){
   var bom=FSYS[fCurSys].bom, parts=[];
   for(var ik in bom){ FILTERS[ik]-=bom[ik]; parts.push(ik+' −'+bom[ik]); }
   if(fOrder[fCurSys]) fOrder[fCurSys].done++;
-  LOG.unshift({t:nowT(),user:curUser||'ระบบ',full:sn,m:'OUT',ok:true,note:'จ่ายตู้+ไส้ '+FSYS[fCurSys].name,ref:''});
-  if(LOG.length>200) LOG.pop();
+  LOG.unshift({t:nowT(),ts:nowTS(),user:curUser||'ระบบ',full:sn,m:'OUT',ok:true,note:'จ่ายตู้+ไส้ '+FSYS[fCurSys].name,ref:''});
+  if(LOG.length>10000) LOG.pop();
   fFlash('f-cabflash','✓ จ่ายตู้ '+sn+' [ระบบ '+FSYS[fCurSys].name+']<br><span style="font-size:12px;">ตัดไส้: '+parts.join(', ')+'</span>','ok');
   renderFilterAll();
 }
