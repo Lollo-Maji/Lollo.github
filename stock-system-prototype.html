@@ -471,8 +471,13 @@ function buildCode(p,l,r){ return p+l+r; }
 // รองรับทั้ง "ABS-SC8 26020336", "ABS-SC826020336", "ABS-SC8-2602-0336"
 function parseCode(raw){
   var s=String(raw).trim().toUpperCase();
-  // เก็บรหัสสินค้าให้คงขีดเดิมไว้ แต่ตัดเว้นวรรคที่คั่นกับเลขออก
-  s=s.replace(/\s+/g,'');                 // ตัดช่องว่างทั้งหมด
+  // ลอก AIM Symbology Identifier ที่เครื่องอ่าน/ไลบรารีบางตัวใส่นำหน้ามา
+  // เช่น ]C1 (Code-128), ]C0, ]A0, ]E0, ]Q1 ฯลฯ — รูปแบบคือ ] + ตัวอักษร + ตัวเลข
+  s=s.replace(/^\][A-Z][0-9]/,'');
+  // เผื่อกรณีหลงเหลือวงเล็บปิดนำหน้าเดี่ยว ๆ
+  s=s.replace(/^\]+/,'');
+  // ตัดช่องว่างทั้งหมด
+  s=s.replace(/\s+/g,'');
   // แยกแบบมีขีดคั่นชัดเจน (รูปแบบเก่า สินค้า-ล็อต-run) ก่อน
   var dash=s.split('-');
   if(dash.length>=3 && /^\d{4}$/.test(dash[dash.length-1]) && /^\d{4}$/.test(dash[dash.length-2])){
