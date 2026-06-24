@@ -1,0 +1,1127 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>ระบบสต็อกบาร์โค้ด — Siam Cooler (Prototype รวม)</title>
+<style>
+  :root{
+    --bg:#ffffff; --panel:#ffffff; --panel2:#f4f5f7; --line:#e3e6ea;
+    --text:#1f2733; --text2:#56616f; --text3:#8893a0;
+    --green:#1f9d57; --green-bg:rgba(31,157,87,0.11);
+    --blue:#2563a8; --blue-bg:rgba(37,99,168,0.11);
+    --amber:#b07d13; --amber-bg:rgba(176,125,19,0.14);
+    --red:#c0392b; --red-bg:rgba(192,57,43,0.11);
+    --mono:'SF Mono',ui-monospace,'Cascadia Code',Consolas,monospace;
+    --sans:-apple-system,BlinkMacSystemFont,'Segoe UI','Sarabun',sans-serif;
+    --r:14px; --r2:10px;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
+  body{background:var(--bg);color:var(--text);font-family:var(--sans);font-size:17px;line-height:1.55;padding-bottom:88px;}
+  .wrap{max-width:780px;margin:0 auto;padding:16px;}
+  h1{font-size:21px;font-weight:700;letter-spacing:-0.01em;}
+  .sub{font-size:14px;color:var(--text3);margin-top:2px;}
+  header{display:flex;align-items:center;justify-content:space-between;padding:6px 2px 16px;}
+  .badge{font-size:11px;background:var(--amber-bg);color:var(--amber);padding:4px 11px;border-radius:20px;font-weight:700;letter-spacing:0.03em;}
+
+  /* nav */
+  nav{position:fixed;bottom:0;left:0;right:0;background:var(--panel);border-top:1px solid var(--line);display:flex;overflow-x:auto;z-index:50;box-shadow:0 -2px 12px rgba(0,0,0,0.06);}
+  nav::-webkit-scrollbar{display:none;}
+  nav button{flex:1 0 auto;min-width:92px;background:none;border:none;color:var(--text3);padding:11px 6px 10px;font-size:12.5px;font-weight:600;font-family:var(--sans);cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:4px;border-top:3px solid transparent;transition:color .15s;}
+  nav button .ic{font-size:21px;line-height:1;}
+  nav button.on{color:var(--blue);border-top-color:var(--blue);}
+
+  .view{display:none;animation:fade .2s ease;}
+  .view.on{display:block;}
+  @keyframes fade{from{opacity:0;transform:translateY(4px);}to{opacity:1;transform:none;}}
+
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:var(--r);padding:18px;margin-bottom:14px;box-shadow:0 1px 3px rgba(0,0,0,0.04);}
+  .card-t{font-size:16px;font-weight:700;color:var(--text);margin-bottom:13px;display:flex;align-items:center;gap:8px;}
+  .card-t .ic{font-size:18px;}
+
+  label.fl{font-size:13px;color:var(--text2);display:block;margin-bottom:5px;font-weight:500;}
+  input,select{width:100%;background:var(--panel2);border:1.5px solid var(--line);border-radius:var(--r2);color:var(--text);padding:13px 14px;font-size:16px;font-family:var(--sans);outline:none;transition:border .15s;}
+  input:focus,select:focus{border-color:var(--blue);}
+  input.mono{font-family:var(--mono);letter-spacing:0.02em;}
+  .grid{display:grid;gap:10px;}
+  button.btn{background:var(--panel2);border:1.5px solid var(--line);border-radius:var(--r2);color:var(--text);padding:13px 18px;font-size:15px;font-family:var(--sans);font-weight:600;cursor:pointer;transition:all .12s;}
+  button.btn:active{transform:scale(0.97);}
+  button.btn.primary{background:var(--blue-bg);border-color:var(--blue);color:var(--blue);}
+  button.btn.green{background:var(--green-bg);border-color:var(--green);color:var(--green);}
+  button.btn.amber{background:var(--amber-bg);border-color:var(--amber);color:var(--amber);}
+  button.btn.red{background:var(--red-bg);border-color:var(--red);color:var(--red);}
+  button.btn.sm{padding:7px 13px;font-size:13.5px;}
+
+  .stats{display:grid;grid-template-columns:repeat(4,1fr);gap:9px;margin-bottom:14px;}
+  .stat{background:var(--panel);border:1px solid var(--line);border-radius:var(--r2);padding:12px 14px;box-shadow:0 1px 3px rgba(0,0,0,0.04);}
+  .stat .l{font-size:13px;color:var(--text3);font-weight:500;}
+  .stat .v{font-size:26px;font-weight:700;margin-top:2px;letter-spacing:-0.02em;}
+
+  .flash{margin-top:11px;padding:12px 15px;border-radius:var(--r2);font-size:15px;min-height:20px;background:var(--panel2);color:var(--text2);transition:all .15s;font-weight:500;}
+  .flash.ok{background:var(--green-bg);color:var(--green);}
+  .flash.warn{background:var(--amber-bg);color:var(--amber);}
+  .flash.err{background:var(--red-bg);color:var(--red);}
+  .flash.info{background:var(--blue-bg);color:var(--blue);}
+
+  table{width:100%;border-collapse:collapse;font-size:15px;}
+  th{text-align:left;font-weight:600;color:var(--text2);font-size:13px;padding:10px 8px;border-bottom:2px solid var(--line);}
+  td{padding:11px 8px;border-bottom:1px solid var(--line);}
+  tr:last-child td{border-bottom:none;}
+  .mono{font-family:var(--mono);}
+  .r{text-align:right;}
+  .c{text-align:center;}
+  .tag{font-size:12px;padding:3px 9px;border-radius:6px;font-weight:700;}
+  .tag.g{background:var(--green-bg);color:var(--green);}
+  .tag.a{background:var(--amber-bg);color:var(--amber);}
+  .tag.r{background:var(--red-bg);color:var(--red);}
+  .tag.b{background:var(--blue-bg);color:var(--blue);}
+
+  .bar{height:9px;border-radius:5px;background:var(--panel2);overflow:hidden;display:flex;}
+  .log{font-family:var(--mono);font-size:13.5px;color:var(--text2);max-height:240px;overflow-y:auto;line-height:1.85;}
+  .toolbar{display:flex;gap:9px;flex-wrap:wrap;align-items:center;margin-bottom:12px;}
+  .toolbar input,.toolbar select{width:auto;flex:1;min-width:130px;}
+
+  /* PDA scan view */
+  .pda-screen{background:var(--panel);border:1px solid var(--line);border-radius:var(--r);overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,0.06);}
+  .pda-modebar{display:grid;grid-template-columns:repeat(2,1fr);gap:1px;background:var(--line);}
+  .pda-modebar button{background:var(--panel);border:none;color:var(--text2);padding:17px 10px;font-size:16px;font-weight:700;font-family:var(--sans);cursor:pointer;}
+  .pda-modebar button.on{background:var(--blue-bg);color:var(--blue);}
+  .pda-body{padding:22px 18px;}
+  .pda-mode-label{font-size:15px;color:var(--text3);text-align:center;margin-bottom:14px;}
+  .pda-scan{font-family:var(--mono);font-size:20px;text-align:center;padding:18px;letter-spacing:0.03em;font-weight:600;}
+  .pda-result{margin-top:18px;border-radius:var(--r2);padding:24px 16px;text-align:center;transition:all .12s;background:var(--panel2);}
+  .pda-result .big{font-size:23px;font-weight:800;}
+  .pda-result .sn{font-family:var(--mono);font-size:15px;margin-top:6px;opacity:0.9;font-weight:600;}
+  .pda-result.ok{background:var(--green-bg);color:var(--green);}
+  .pda-result.err{background:var(--red-bg);color:var(--red);}
+  .pda-result.warn{background:var(--amber-bg);color:var(--amber);}
+  .pda-counter{text-align:center;margin-top:16px;font-size:14px;color:var(--text3);}
+  .pda-counter b{color:var(--text);font-size:18px;}
+
+  .muted{color:var(--text3);font-size:14px;text-align:center;padding:18px;}
+  .split2{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+  @media(max-width:560px){.split2{grid-template-columns:1fr;}.stats{grid-template-columns:repeat(2,1fr);}}
+  .hint{font-size:13.5px;color:var(--text3);margin-top:9px;line-height:1.7;}
+  .pill-row{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px;}
+  .seg{display:inline-flex;background:var(--panel2);border-radius:var(--r2);padding:4px;gap:4px;}
+  .seg button{background:none;border:none;color:var(--text2);padding:9px 16px;font-size:14px;border-radius:8px;cursor:pointer;font-family:var(--sans);font-weight:600;}
+  .seg button.on{background:var(--blue-bg);color:var(--blue);}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div>
+      <h1>ระบบสต็อกบาร์โค้ด</h1>
+      <div class="sub">Siam Cooler — Prototype รวมทุกฟังก์ชัน</div>
+    </div>
+    <span class="badge">PROTOTYPE</span>
+  </header>
+
+  <!-- 1b. CAMERA SCAN -->
+  <section class="view on" data-view="cam">
+    <div class="stats">
+      <div class="stat"><div class="l">ทั้งหมด</div><div class="v" id="c-total">0</div></div>
+      <div class="stat"><div class="l">ในสต็อก</div><div class="v" style="color:var(--green)" id="c-in">0</div></div>
+      <div class="stat"><div class="l">จ่ายออก</div><div class="v" style="color:var(--blue)" id="c-out">0</div></div>
+      <div class="stat"><div class="l">ปัญหา</div><div class="v" style="color:var(--red)" id="c-bad">0</div></div>
+    </div>
+    <div class="pda-screen">
+      <div class="pda-modebar" style="grid-template-columns:repeat(3,1fr);">
+        <button data-cmode="IN" class="on">▼ รับเข้า</button>
+        <button data-cmode="OUT">▲ จ่ายออก</button>
+        <button data-cmode="BAD">⚠ ชำรุด/ขาด</button>
+      </div>
+      <div class="pda-body">
+        <div style="display:flex;gap:8px;align-items:center;margin-bottom:12px;">
+          <span style="font-size:14px;color:var(--text3);white-space:nowrap;">ผู้ยิง:</span>
+          <select id="cam-user" style="flex:1;"></select>
+        </div>
+        <div class="pda-mode-label">โหมด: <b id="cam-modetxt" style="color:var(--green)">รับเข้า</b></div>
+
+        <div id="cam-viewport" style="position:relative;width:100%;min-height:240px;background:#000;border-radius:var(--r2);overflow:hidden;">
+          <div id="cam-reader" style="width:100%;"></div>
+          <div id="cam-placeholder" style="position:absolute;top:0;left:0;right:0;bottom:0;color:#aaa;font-size:15px;text-align:center;padding:20px;display:flex;align-items:center;justify-content:center;">📷 กดปุ่ม "เปิดกล้อง" ด้านล่าง<br>แล้วส่องไปที่บาร์โค้ดบนสินค้า</div>
+        </div>
+
+        <div class="grid" style="grid-template-columns:1fr 1fr;margin-top:12px;">
+          <button class="btn green" id="cam-start">เปิดกล้อง</button>
+          <button class="btn" id="cam-stop" disabled>ปิดกล้อง</button>
+        </div>
+
+        <div style="margin-top:14px;padding-top:14px;border-top:1px dashed var(--line);">
+          <div style="font-size:13px;color:var(--text2);margin-bottom:8px;">⌨ กรอกรหัสเอง (เผื่อป้าย SN ขาด/บาร์โค้ดเสีย)</div>
+          <div style="display:flex;gap:8px;">
+            <input id="cam-manual" class="mono" placeholder="พิมพ์ SN เช่น ABS-SC8 26060001" autocomplete="off" style="flex:1;">
+            <button class="btn primary" id="cam-manual-fire" style="white-space:nowrap;">ยืนยัน</button>
+          </div>
+        </div>
+
+        <div class="pda-result" id="cam-result"><div class="big">พร้อมสแกน</div><div class="sn">ลงทะเบียน + รับเข้าในแท็บ "รับล็อต" ก่อน</div></div>
+        <div class="pda-counter">เซสชันนี้ยิงไปแล้ว <b id="cam-count">0</b> ครั้ง</div>
+      </div>
+    </div>
+    <div class="hint" id="cam-hint">ยิงด้วยกล้องมือถือ — เปิดกล้อง ส่องบาร์โค้ดให้อยู่ในกรอบ ระบบอ่านแล้วตัดสต็อกอัตโนมัติ เว้นช่วงสั้น ๆ กันอ่านซ้ำตัวเดิม • ต้องเปิดผ่านมือถือและอนุญาตให้ใช้กล้อง</div>
+  </section>
+
+  <!-- 2. RECEIVE LOT -->
+  <section class="view" data-view="lot">
+    <div class="card">
+      <div class="card-t"><span class="ic">📋</span> ลงทะเบียนล็อตล่วงหน้า</div>
+      <div class="grid" style="grid-template-columns:1.3fr 1fr;">
+        <div><label class="fl">รหัสสินค้า</label><input id="lot-prod" class="mono" value="WFP-3500"></div>
+        <div><label class="fl">ล็อต (YYMM)</label><input id="lot-lot" class="mono" value="2608"></div>
+      </div>
+      <div class="grid" style="grid-template-columns:1fr 1fr;margin-top:8px;">
+        <div><label class="fl">ตั้งแต่</label><input id="lot-from" type="number" value="1"></div>
+        <div><label class="fl">ถึง</label><input id="lot-to" type="number" value="450"></div>
+      </div>
+      <div class="grid" style="grid-template-columns:1fr 1fr;margin-top:10px;">
+        <button class="btn" id="lot-reg">ลงทะเบียน</button>
+        <button class="btn primary" id="lot-recv">รับเข้าทั้งล็อต</button>
+      </div>
+      <div class="flash" id="lot-flash">รหัสเต็มจะเป็น เช่น WFP-3500-2608-0001</div>
+      <div class="pill-row">
+        <button class="btn sm quick-lot" data-p="WFP-2200" data-l="2608" data-t="200">+ WFP-2200 (200)</button>
+        <button class="btn sm quick-lot" data-p="ABS-SC8" data-l="2608" data-t="150">+ ABS-SC8 (150)</button>
+        <button class="btn sm quick-lot" data-p="RO-900" data-l="2606" data-t="120">+ RO-900 (120)</button>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-t"><span class="ic">📦</span> สถานะแต่ละล็อต</div>
+      <div id="lot-table"><div class="muted">ยังไม่มีล็อต — ลงทะเบียนด้านบน</div></div>
+    </div>
+  </section>
+
+  <!-- 3. STOCK SUMMARY -->
+  <section class="view" data-view="stock">
+    <div class="stats">
+      <div class="stat"><div class="l">รายการสินค้า</div><div class="v" id="s-prod">0</div></div>
+      <div class="stat"><div class="l">คงเหลือรวม</div><div class="v" style="color:var(--green)" id="s-in">0</div></div>
+      <div class="stat"><div class="l">จ่ายออกรวม</div><div class="v" style="color:var(--blue)" id="s-out">0</div></div>
+      <div class="stat" id="s-low-card" style="cursor:pointer"><div class="l" style="color:var(--amber)">เหลือน้อย ⚠</div><div class="v" style="color:var(--amber)" id="s-low">0</div></div>
+    </div>
+    <div class="toolbar">
+      <input id="s-search" placeholder="🔍 ค้นหารหัสสินค้า">
+      <select id="s-filter">
+        <option value="all">ทุกสถานะ</option>
+        <option value="low">เหลือน้อย</option>
+        <option value="zero">หมด (0)</option>
+        <option value="ok">เพียงพอ</option>
+      </select>
+      <select id="s-sort">
+        <option value="low-first">เหลือน้อย→มาก</option>
+        <option value="high-first">เหลือมาก→น้อย</option>
+        <option value="name">รหัส A-Z</option>
+        <option value="out-most">จ่ายออกมากสุด</option>
+      </select>
+    </div>
+    <div class="card" style="padding:10px 12px;display:flex;align-items:center;gap:10px;margin-bottom:12px;flex-wrap:wrap;">
+      <span style="font-size:14px;color:var(--text2);white-space:nowrap;">⚠ เกณฑ์เริ่มต้น เตือนเมื่อ ≤</span>
+      <input id="s-threshold" type="number" value="20" min="0" style="width:90px;">
+      <span style="font-size:14px;color:var(--text3);">ชิ้น</span>
+      <span style="font-size:13px;color:var(--text3);margin-left:auto;">ตั้งเกณฑ์เฉพาะแต่ละสินค้าได้ในคอลัมน์ "เกณฑ์เตือน"</span>
+    </div>
+    <div class="card" style="padding:0;overflow:hidden;">
+      <table>
+        <thead><tr><th>สินค้า</th><th class="r">คงเหลือ</th><th class="r">จ่ายออก</th><th class="r">ล็อต</th><th class="c">เกณฑ์เตือน</th><th style="width:80px">สัดส่วน</th></tr></thead>
+        <tbody id="s-rows"></tbody>
+      </table>
+      <div id="s-empty" class="muted" style="display:none;">ไม่พบสินค้าตามเงื่อนไข</div>
+    </div>
+    <div class="hint" id="s-note"></div>
+  </section>
+
+  <!-- 4. USERS -->
+  <section class="view" data-view="users">
+    <div class="card">
+      <div class="card-t"><span class="ic">👤</span> รายชื่อผู้ใช้ (คนยิง)</div>
+      <div style="font-size:12px;color:var(--text2);margin-bottom:11px;">กำหนดชื่อคนที่จะยิง เลือกผู้ยิงในหน้า PDA ก่อนยิง แล้ว Log จะบันทึกว่าใครยิงรายการไหน</div>
+      <div style="display:flex;gap:8px;">
+        <input id="u-name" placeholder="ชื่อผู้ใช้ใหม่ เช่น สมชาย" style="flex:1;">
+        <button class="btn primary" id="u-add">เพิ่ม</button>
+      </div>
+      <div class="flash" id="u-flash" style="margin-top:9px;display:none;"></div>
+      <div id="u-list" style="margin-top:12px;"></div>
+    </div>
+    <div class="card">
+      <div class="card-t"><span class="ic">📝</span> Log การยิง (ใครยิงอะไร)</div>
+      <div class="log" id="u-log"><div class="muted">ยังไม่มีรายการ</div></div>
+    </div>
+  </section>
+
+  <!-- 6. REPORT รับ-ออก -->
+  <section class="view" data-view="report">
+    <div class="toolbar">
+      <span style="font-size:13px;color:var(--text2)">ช่วง:</span>
+      <span class="seg"><button id="rp-today" class="on">วันนี้</button><button id="rp-month-btn">เดือนนี้</button><button id="rp-all">ทั้งหมด</button></span>
+    </div>
+    <div class="toolbar" style="margin-top:-4px;">
+      <span style="font-size:13px;color:var(--text2)">ทิศทาง:</span>
+      <span class="seg"><button id="rp-both" class="on">รับ+ออก</button><button id="rp-in">รับเข้า</button><button id="rp-out">จ่ายออก</button></span>
+    </div>
+    <div class="stats" style="grid-template-columns:repeat(3,1fr);">
+      <div class="stat"><div class="l" style="color:var(--green)">รับเข้า</div><div class="v" style="color:var(--green)" id="rp-cin">0</div></div>
+      <div class="stat"><div class="l" style="color:var(--blue)">จ่ายออก</div><div class="v" style="color:var(--blue)" id="rp-cout">0</div></div>
+      <div class="stat"><div class="l">ชนิดสินค้า</div><div class="v" id="rp-sku">0</div></div>
+    </div>
+    <div class="toolbar">
+      <input id="rp-search" placeholder="🔍 ค้นหา SN / รหัสสินค้า" style="flex:1;">
+      <button class="btn sm" id="rp-expand">กางทั้งหมด</button>
+      <button class="btn sm" id="rp-collapse">พับทั้งหมด</button>
+    </div>
+    <div id="rp-groups"></div>
+    <div class="hint" id="rp-note"></div>
+  </section>
+
+  <div style="margin-top:6px;"><button class="btn red sm" id="global-reset">รีเซ็ตข้อมูลทั้งระบบ</button></div>
+</div>
+
+<nav id="nav">
+  <button data-go="cam" class="on"><span class="ic">📷</span>ยิงกล้อง</button>
+  <button data-go="lot"><span class="ic">📋</span>รับล็อต</button>
+  <button data-go="stock"><span class="ic">📊</span>คงเหลือ</button>
+  <button data-go="users"><span class="ic">👤</span>ผู้ใช้</button>
+  <button data-go="report"><span class="ic">📈</span>รายเดือน</button>
+</nav>
+
+<script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jsbarcode/3.11.6/JsBarcode.all.min.js"></script>
+<script>
+/* ============ ฐานข้อมูลกลางจำลอง (แทน Master_SN + Log + Reservations) ============ */
+var DB = {};          // full code -> {product, lot, status:'none'|'in'|'out'|'bad', by}
+var prodOrder = [];   // ลำดับสินค้า
+var prodLots = {};    // product -> [lot,...]
+var LOG = [];         // {t, user, full, m, ok, note, ref}
+var RESV = [];        // {id, product, qty, cust, due, status}
+var rid = 1;
+var blocked = 0;
+var pdaCount = 0;
+
+function pad(n){ return ('0000'+n).slice(-4); }
+function nowT(){ return new Date().toLocaleTimeString('th-TH',{hour12:false}); }
+function nowTS(){ return Date.now(); }   // timestamp เต็ม ms สำหรับกรองตามวัน/เดือน
+function sameDay(ts){ var d=new Date(ts), n=new Date(); return d.getFullYear()===n.getFullYear()&&d.getMonth()===n.getMonth()&&d.getDate()===n.getDate(); }
+function sameMonth(ts){ var d=new Date(ts), n=new Date(); return d.getFullYear()===n.getFullYear()&&d.getMonth()===n.getMonth(); }
+function fmtDate(ts){ var d=new Date(ts); return ('0'+d.getDate()).slice(-2)+'/'+('0'+(d.getMonth()+1)).slice(-2)+' '+('0'+d.getHours()).slice(-2)+':'+('0'+d.getMinutes()).slice(-2); }
+// สร้างรหัสตามรูปแบบจริงของโรงงาน: สินค้า + YYMM + running(4หลัก) ติดกัน เช่น ABS-SC826020336
+function buildCode(p,l,r){ return p+l+r; }
+// parser ใหม่: ตัดเว้นวรรค/ขีดทิ้ง แล้วจับ 8 ตัวเลขท้าย = YYMM(4)+running(4) ที่เหลือหน้า=สินค้า
+// รองรับทั้ง "ABS-SC8 26020336", "ABS-SC826020336", "ABS-SC8-2602-0336"
+function parseCode(raw){
+  var s=String(raw).trim().toUpperCase();
+  // ลอก AIM Symbology Identifier ที่เครื่องอ่าน/ไลบรารีบางตัวใส่นำหน้ามา
+  // เช่น ]C1 (Code-128), ]C0, ]A0, ]E0, ]Q1 ฯลฯ — รูปแบบคือ ] + ตัวอักษร + ตัวเลข
+  s=s.replace(/^\][A-Z][0-9]/,'');
+  // เผื่อกรณีหลงเหลือวงเล็บปิดนำหน้าเดี่ยว ๆ
+  s=s.replace(/^\]+/,'');
+  // ตัดช่องว่างทั้งหมด
+  s=s.replace(/\s+/g,'');
+  // แยกแบบมีขีดคั่นชัดเจน (รูปแบบเก่า สินค้า-ล็อต-run) ก่อน
+  var dash=s.split('-');
+  if(dash.length>=3 && /^\d{4}$/.test(dash[dash.length-1]) && /^\d{4}$/.test(dash[dash.length-2])){
+    var runD=dash[dash.length-1], lotD=dash[dash.length-2];
+    var prodD=dash.slice(0,dash.length-2).join('-');
+    if(prodD) return {full:prodD+lotD+runD, product:prodD, lot:lotD, run:runD, raw:s};
+  }
+  // รูปแบบจริง: จับ 8 ตัวเลขท้ายสุด (YYMM+running) ที่เหลือหน้าคือรหัสสินค้า
+  var m=s.match(/^(.+?)(\d{4})(\d{4})$/);
+  if(!m) return null;
+  var product=m[1];
+  // ตัดขีด/อักขระคั่นท้ายรหัสสินค้าออก ถ้ามีติดมา (เช่น "ABS-SC8-" -> "ABS-SC8")
+  product=product.replace(/[-\s]+$/,'');
+  if(!product) return null;
+  return {full:product+m[2]+m[3], product:product, lot:m[2], run:m[3], raw:s};
+}
+function el(id){ return document.getElementById(id); }
+
+/* ============ NAV ============ */
+document.querySelectorAll('#nav button').forEach(function(b){
+  b.onclick=function(){
+    var go=this.getAttribute('data-go');
+    document.querySelectorAll('#nav button').forEach(function(x){x.classList.remove('on');});
+    this.classList.add('on');
+    document.querySelectorAll('.view').forEach(function(v){ v.classList.toggle('on', v.getAttribute('data-view')===go); });
+    if(go==='pda') setTimeout(function(){ el('pda-scan').focus(); },50);
+    if(go==='stock') renderStock();
+    if(go==='resv') renderResv();
+    if(go==='report') renderReport();
+    if(go==='users') renderUsers();
+    if(go==='cam') refreshCamUser();
+    if(go==='gen') renderGenLots();
+    if(go==='filter') renderFilterAll();
+    if(go!=='cam') stopCam();   // ออกจากหน้ากล้อง ปิดกล้องเสมอ
+  };
+});
+
+/* ============ LOT REGISTER + RECEIVE ============ */
+function register(p,l,from,to,autoRecv){
+  if(!p||!/^\d{4}$/.test(l)) return -1;
+  var added=0;
+  for(var i=from;i<=to;i++){
+    var f=buildCode(p,l,pad(i));
+    if(!DB[f]){ DB[f]={product:p,lot:l,status:autoRecv?'in':'none',by:null}; added++; }
+  }
+  if(!prodLots[p]){ prodLots[p]=[]; prodOrder.push(p); }
+  if(prodLots[p].indexOf(l)<0) prodLots[p].push(l);
+  return added;
+}
+el('lot-reg').onclick=function(){
+  var p=el('lot-prod').value.trim().toUpperCase(), l=el('lot-lot').value.trim();
+  var f=parseInt(el('lot-from').value,10), t=parseInt(el('lot-to').value,10);
+  if(!(f>=1&&t>=f)){ lotFlash('✕ ช่วงเลขไม่ถูกต้อง','err'); return; }
+  if(t-f>5000){ lotFlash('✕ ช่วงกว้างเกินไป','err'); return; }
+  var a=register(p,l,f,t,false);
+  if(a<0){ lotFlash('✕ ตรวจรหัสสินค้า/ล็อต','err'); return; }
+  lotFlash('✓ ลงทะเบียน '+p+'-'+l+' เพิ่ม '+a+' รายการ (สถานะ: รอรับ)','ok');
+  renderLotTable(); syncAll();
+};
+el('lot-recv').onclick=function(){
+  var p=el('lot-prod').value.trim().toUpperCase(), l=el('lot-lot').value.trim(), done=0;
+  for(var k in DB){ if(DB[k].product===p&&DB[k].lot===l&&DB[k].status==='none'){ DB[k].status='in'; done++;
+    LOG.unshift({t:nowT(),ts:nowTS(),user:'ระบบ',full:k,m:'IN',ok:true,note:'รับเข้าทั้งล็อต',ref:'รับเข้าทั้งล็อต'}); } }
+  if(LOG.length>10000) LOG=LOG.slice(0,10000);
+  lotFlash('✓ รับเข้า '+p+'-'+l+' จำนวน '+done+' รายการ'+(done===0?' (ไม่มีรายการรอรับ)':''),'info');
+  renderLotTable(); syncAll();
+};
+document.querySelectorAll('.quick-lot').forEach(function(b){
+  b.onclick=function(){
+    var p=this.getAttribute('data-p'),l=this.getAttribute('data-l'),t=parseInt(this.getAttribute('data-t'),10);
+    register(p,l,1,t,true);
+    lotFlash('✓ เพิ่ม '+p+'-'+l+' '+t+' รายการ (รับเข้าแล้ว)','ok');
+    renderLotTable(); syncAll();
+  };
+});
+function lotFlash(msg,kind){ var f=el('lot-flash'); f.textContent=msg; f.className='flash '+(kind||''); }
+function renderLotTable(){
+  var box=el('lot-table');
+  var keys=[];
+  for(var p in prodLots){ prodLots[p].forEach(function(l){ keys.push(p+'|'+l); }); }
+  if(!keys.length){ box.innerHTML='<div class="muted">ยังไม่มีล็อต — ลงทะเบียนด้านบน</div>'; return; }
+  var per={};
+  for(var k in DB){ var r=DB[k], lk=r.product+'|'+r.lot; if(!per[lk])per[lk]={in:0,out:0,none:0,bad:0}; per[lk][r.status]++; }
+  var h='<table><thead><tr><th>ล็อต</th><th class="r">คงเหลือ</th><th class="r">ออก</th><th class="r">รอรับ</th><th class="r">ปัญหา</th><th class="r">จัดการ</th></tr></thead><tbody>';
+  keys.forEach(function(lk){
+    var d=per[lk]||{in:0,out:0,none:0,bad:0}, pr=lk.split('|');
+    h+='<tr><td class="mono">'+pr[0]+'-'+pr[1]+'</td>'+
+      '<td class="r" style="color:var(--green)">'+d.in+'</td><td class="r" style="color:var(--blue)">'+d.out+'</td>'+
+      '<td class="r">'+d.none+'</td><td class="r" style="color:var(--red)">'+(d.bad||0)+'</td>'+
+      '<td class="r" style="white-space:nowrap;">'+
+        '<button class="btn sm" data-editlot="'+lk+'" style="margin-right:4px;">แก้ไข</button>'+
+        '<button class="btn sm red" data-dellot="'+lk+'">ลบ</button></td></tr>';
+  });
+  box.innerHTML=h+'</tbody></table>';
+  box.querySelectorAll('[data-editlot]').forEach(function(b){ b.onclick=function(){ editLot(this.getAttribute('data-editlot')); }; });
+  box.querySelectorAll('[data-dellot]').forEach(function(b){ b.onclick=function(){ delLot(this.getAttribute('data-dellot')); }; });
+}
+// แก้ไขล็อต: ดึงค่าขึ้นฟอร์มด้านบนเพื่อปรับ/รับเข้าเพิ่ม
+function editLot(lk){
+  var pr=lk.split('|');
+  el('lot-prod').value=pr[0]; el('lot-lot').value=pr[1];
+  // หาช่วง running ที่มีอยู่ของล็อตนี้
+  var nums=[];
+  for(var k in DB){ if(DB[k].product===pr[0]&&DB[k].lot===pr[1]){ var p=parseCode(k); if(p) nums.push(parseInt(p.run,10)); } }
+  nums.sort(function(a,b){return a-b;});
+  el('lot-from').value=nums[0]||1; el('lot-to').value=nums[nums.length-1]||1;
+  lotFlash('โหลดล็อต '+pr[0]+'-'+pr[1]+' ขึ้นฟอร์มแล้ว — แก้ช่วงแล้วกดลงทะเบียน/รับเข้าเพื่ออัปเดต','info');
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+// ลบล็อต: เอา SN ทั้งหมดของล็อตนี้ออกจากระบบ
+function delLot(lk){
+  var pr=lk.split('|');
+  var cnt=0;
+  Object.keys(DB).forEach(function(k){ if(DB[k].product===pr[0]&&DB[k].lot===pr[1]){ delete DB[k]; cnt++; } });
+  // เอาล็อตออกจาก prodLots
+  if(prodLots[pr[0]]){ prodLots[pr[0]]=prodLots[pr[0]].filter(function(l){return l!==pr[1];});
+    if(!prodLots[pr[0]].length){ delete prodLots[pr[0]]; prodOrder=prodOrder.filter(function(p){return p!==pr[0];}); } }
+  lotFlash('🗑 ลบล็อต '+pr[0]+'-'+pr[1]+' ออก '+cnt+' รายการ','info');
+  renderLotTable(); syncAll();
+}
+
+/* ============ PDA SCAN ============ */
+var pdaMode='IN';
+var pdaModeMap={IN:['รับเข้า','var(--green)'],OUT:['จ่ายออก','var(--blue)'],BAD:['ชำรุด/ขาด','var(--red)']};
+document.querySelectorAll('[data-pmode]').forEach(function(b){
+  b.onclick=function(){
+    pdaMode=this.getAttribute('data-pmode');
+    document.querySelectorAll('[data-pmode]').forEach(function(x){x.classList.remove('on');});
+    this.classList.add('on');
+    el('pda-modetxt').textContent=pdaModeMap[pdaMode][0];
+    el('pda-modetxt').style.color=pdaModeMap[pdaMode][1];
+    el('pda-scan').focus();
+  };
+});
+function pdaResult(cls,big,sn){ var r=el('pda-result'); if(!r) return; r.className='pda-result '+cls; r.innerHTML='<div class="big">'+big+'</div>'+(sn?'<div class="sn">'+sn+'</div>':''); }
+function processCore(user,raw,mode){
+  var p=parseCode(raw);
+  if(!p) return {ok:false,cls:'err',msg:'✕ รูปแบบรหัสผิด',sn:raw,note:'รูปแบบผิด',m:mode};
+  var rec=DB[p.full];
+  if(!rec) return {ok:false,cls:'err',msg:'✕ ไม่พบในทะเบียน',sn:p.full,note:'ไม่พบในทะเบียน',m:mode};
+  if(mode==='IN'){
+    if(rec.status==='in') return {ok:false,cls:'warn',msg:'⚠ รับเข้าแล้ว (ซ้ำ)',sn:p.full,note:'ยิงซ้ำ',m:'IN'};
+    if(rec.status==='out') return {ok:false,cls:'warn',msg:'⚠ จ่ายออกไปแล้ว',sn:p.full,note:'จ่ายแล้ว',m:'IN'};
+    if(rec.status==='bad') return {ok:false,cls:'warn',msg:'⚠ ทำเครื่องหมายมีปัญหา',sn:p.full,note:'',m:'IN'};
+    rec.status='in'; rec.by=user; return {ok:true,cls:'ok',msg:'✓ รับเข้าสำเร็จ',sn:p.full,note:'',m:'IN'};
+  }
+  if(mode==='OUT'){
+    if(rec.status!=='in'){ var w=rec.status==='out'?'จ่ายไปแล้ว':(rec.status==='bad'?'มีปัญหา':'ยังไม่รับเข้า');
+      if(rec.status==='out') blocked++;
+      return {ok:false,cls:'warn',msg:'⚠ '+w+' — จ่ายไม่ได้',sn:p.full,note:w,m:'OUT'}; }
+    rec.status='out'; rec.by=user; return {ok:true,cls:'ok',msg:'✓ จ่ายออกสำเร็จ',sn:p.full,note:'',m:'OUT'};
+  }
+  // BAD
+  rec.status='bad'; rec.by=user; return {ok:true,cls:'ok',msg:'✓ ทำเครื่องหมายมีปัญหา',sn:p.full,note:'',m:'BAD'};
+}
+function pdaFire(raw){
+  if(!raw||!raw.trim()) return;
+  var user=curUser||'(ไม่ระบุ)';
+  var res=processCore(user,raw,pdaMode);
+  pdaResult(res.cls,res.msg,res.sn);
+  LOG.unshift({t:nowT(),ts:nowTS(),user:user,full:res.sn,m:res.m,ok:res.ok,note:res.note,ref:''});
+  if(LOG.length>10000) LOG.pop();
+  pdaCount++; el('pda-count').textContent=pdaCount;
+  el('pda-scan').value='';
+  if(navigator.vibrate){ navigator.vibrate(res.ok?30:[40,30,40]); }
+  syncAll();
+}
+el('pda-scan') && el('pda-scan').addEventListener('keydown',function(e){ if(e.key==='Enter'){ pdaFire(this.value); }});
+
+/* ============ CAMERA SCAN ============ */
+var camMode='IN';
+var camReader=null, camActive=false, camLastCode='', camLastTime=0;
+function refreshCamUser(){
+  var sel=el('cam-user');
+  sel.innerHTML=USERS.map(function(u){return '<option value="'+u+'">'+u+'</option>';}).join('');
+  if(USERS.indexOf(curUser)>=0) sel.value=curUser;
+}
+el('cam-user') && el('cam-user').addEventListener('change',function(){ curUser=this.value; var ps=el('pda-user'); if(ps) ps.value=this.value; });
+document.querySelectorAll('[data-cmode]').forEach(function(b){
+  b.onclick=function(){
+    camMode=this.getAttribute('data-cmode');
+    document.querySelectorAll('[data-cmode]').forEach(function(x){x.classList.remove('on');});
+    this.classList.add('on');
+    el('cam-modetxt').textContent=pdaModeMap[camMode][0];
+    el('cam-modetxt').style.color=pdaModeMap[camMode][1];
+  };
+});
+function camResult(cls,big,sn){ var r=el('cam-result'); r.className='pda-result '+cls; r.innerHTML='<div class="big">'+big+'</div>'+(sn?'<div class="sn">'+sn+'</div>':''); }
+function camHandle(text){
+  var nowMs=Date.now();
+  // กันอ่านซ้ำตัวเดิมรัว ๆ — ตัวเดิมต้องเว้น 2.5 วินาที
+  if(text===camLastCode && (nowMs-camLastTime)<2500) return;
+  camLastCode=text; camLastTime=nowMs;
+  var user=curUser||'(ไม่ระบุ)';
+  var res=processCore(user,text,camMode);
+  camResult(res.cls,res.msg,res.sn);
+  LOG.unshift({t:nowT(),ts:nowTS(),user:user,full:res.sn,m:res.m,ok:res.ok,note:res.note,ref:''});
+  if(LOG.length>10000) LOG.pop();
+  pdaCount++; el('cam-count').textContent=pdaCount;
+  if(navigator.vibrate){ navigator.vibrate(res.ok?40:[50,40,50]); }
+  syncAll();
+}
+function startCam(){
+  if(typeof Html5Qrcode==='undefined'){ camResult('err','✕ โหลดตัวอ่านบาร์โค้ดไม่สำเร็จ','เช็คอินเทอร์เน็ต แล้วลองรีเฟรช'); return; }
+  if(!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia){ camResult('err','✕ เบราว์เซอร์ไม่รองรับกล้อง','ลองเปิดบนมือถือ'); return; }
+  try{
+    var fmts;
+    try{
+      fmts=[ Html5QrcodeSupportedFormats.CODE_128, Html5QrcodeSupportedFormats.CODE_39, Html5QrcodeSupportedFormats.EAN_13, Html5QrcodeSupportedFormats.CODE_93 ];
+    }catch(e){ fmts=undefined; }
+    camReader=new Html5Qrcode('cam-reader', fmts?{ verbose:false, formatsToSupport:fmts }:{ verbose:false });
+  }catch(e){ camResult('err','✕ เริ่มตัวอ่านไม่ได้',e.message); return; }
+  var config={ fps:10, qrbox:function(w,h){ var m=Math.min(w,h); return { width:Math.round(Math.min(w*0.85,320)), height:Math.round(m*0.45) }; } };
+  camReader.start(
+    { facingMode:'environment' },   // กล้องหลัง
+    config,
+    function(decodedText){ camHandle(decodedText); },
+    function(errMsg){ /* อ่านไม่เจอในเฟรมนี้ — เงียบไว้ */ }
+  ).then(function(){
+    camActive=true;
+    el('cam-placeholder').style.display='none';
+    el('cam-start').disabled=true;
+    el('cam-stop').disabled=false;
+    camResult('','กำลังสแกน...','ส่องบาร์โค้ดให้อยู่ในกรอบ');
+  }).catch(function(e){
+    var msg='✕ เปิดกล้องไม่ได้';
+    var s=String(e&&e.message||e||'');
+    if(s.indexOf('NotAllowed')>=0||s.indexOf('Permission')>=0) msg='✕ ไม่ได้อนุญาตให้ใช้กล้อง';
+    if(s.indexOf('NotFound')>=0) msg='✕ ไม่พบกล้อง';
+    camResult('err',msg,'ต้องอนุญาตกล้อง • ลองรีเฟรชหน้า');
+    try{ camReader.clear(); }catch(ee){} camReader=null;
+  });
+}
+function stopCam(){
+  if(camReader){
+    var r=camReader; camReader=null;
+    try{
+      if(camActive && typeof r.stop==='function'){
+        r.stop().then(function(){ try{ r.clear(); }catch(e){} }).catch(function(){ try{ r.clear(); }catch(e){} });
+      } else { try{ r.clear(); }catch(e){} }
+    }catch(e){}
+  }
+  camActive=false;
+  var ph=el('cam-placeholder'); if(ph){ ph.style.display='flex'; }
+  var bs=el('cam-start'); if(bs){ bs.disabled=false; }
+  var bp=el('cam-stop'); if(bp){ bp.disabled=true; }
+}
+el('cam-start') && (el('cam-start').onclick=startCam);
+el('cam-stop') && (el('cam-stop').onclick=function(){ stopCam(); camResult('','หยุดสแกนแล้ว','กดเปิดกล้องเพื่อสแกนต่อ'); });
+// ยิง SN แบบกรอกเอง (manual) — ใช้ตรรกะตัดสต็อกเดียวกับกล้อง แต่ไม่ติด debounce
+function camManualFire(){
+  var text=(el('cam-manual').value||'').trim();
+  if(!text){ camResult('err','✕ พิมพ์รหัส SN ก่อน',''); return; }
+  var user=curUser||'(ไม่ระบุ)';
+  var res=processCore(user,text,camMode);
+  camResult(res.cls,res.msg,res.sn);
+  LOG.unshift({t:nowT(),ts:nowTS(),user:user,full:res.sn,m:res.m,ok:res.ok,note:(res.note?res.note+' ':'')+'(กรอกเอง)',ref:''});
+  if(LOG.length>10000) LOG.pop();
+  pdaCount++; el('cam-count').textContent=pdaCount;
+  if(navigator.vibrate){ navigator.vibrate(res.ok?40:[50,40,50]); }
+  el('cam-manual').value='';
+  el('cam-manual').focus();
+  syncAll();
+}
+el('cam-manual-fire') && (el('cam-manual-fire').onclick=camManualFire);
+el('cam-manual') && el('cam-manual').addEventListener('keydown',function(e){ if(e.key==='Enter') camManualFire(); });
+
+/* ============ STOCK SUMMARY ============ */
+var sState={search:'',filter:'all',sort:'low-first'};
+var prodThreshold={};   // product -> เกณฑ์เฉพาะตัว (ถ้าไม่มี ใช้ค่าเริ่มต้นกลาง)
+function defaultThreshold(){ var v=parseInt(el('s-threshold').value,10); return isNaN(v)?20:v; }
+function thresholdOf(p){ return (prodThreshold[p]!==undefined && prodThreshold[p]!=='') ? prodThreshold[p] : defaultThreshold(); }
+function aggProd(){
+  var prod={};
+  for(var k in DB){ var r=DB[k]; if(!prod[r.product])prod[r.product]={in:0,out:0,none:0,bad:0,total:0,lots:prodLots[r.product]?prodLots[r.product].length:1}; prod[r.product][r.status]++; prod[r.product].total++; }
+  return prod;
+}
+function renderStock(){
+  var ag=aggProd();
+  var totIn=0,totOut=0,low=0,nprod=0;
+  for(var p in ag){ nprod++; totIn+=ag[p].in; totOut+=ag[p].out; if(ag[p].in<=thresholdOf(p))low++; }
+  el('s-prod').textContent=nprod; el('s-in').textContent=totIn.toLocaleString();
+  el('s-out').textContent=totOut.toLocaleString(); el('s-low').textContent=low;
+  var list=[];
+  for(var p in ag){ if(sState.search && p.indexOf(sState.search.toUpperCase())<0) continue;
+    var d=ag[p], LOW=thresholdOf(p);
+    if(sState.filter==='low'&&!(d.in>0&&d.in<=LOW))continue;
+    if(sState.filter==='zero'&&d.in!==0)continue;
+    if(sState.filter==='ok'&&d.in<=LOW)continue;
+    list.push({code:p,d:d}); }
+  list.sort(function(a,b){
+    if(sState.sort==='low-first')return a.d.in-b.d.in;
+    if(sState.sort==='high-first')return b.d.in-a.d.in;
+    if(sState.sort==='name')return a.code<b.code?-1:1;
+    if(sState.sort==='out-most')return b.d.out-a.d.out; return 0; });
+  var tb=el('s-rows');
+  if(!list.length){ tb.innerHTML=''; el('s-empty').style.display='block'; el('s-note').textContent=''; return; }
+  el('s-empty').style.display='none';
+  tb.innerHTML=list.map(function(x){
+    var d=x.d, tot=d.total||1, pct=Math.round(d.in/tot*100), LOW=thresholdOf(x.code);
+    var custom=(prodThreshold[x.code]!==undefined && prodThreshold[x.code]!=='');
+    var zero=d.in===0, lowf=d.in>0&&d.in<=LOW;
+    var col=zero?'var(--red)':(lowf?'var(--amber)':'var(--text)');
+    var bcol=zero?'var(--red)':(lowf?'var(--amber)':'var(--green)');
+    var badge=zero?'<span class="tag r">หมด</span>':(lowf?'<span class="tag a">น้อย</span>':'');
+    return '<tr><td class="mono">'+x.code+' '+badge+'</td>'+
+      '<td class="r" style="font-weight:600;color:'+col+'">'+d.in.toLocaleString()+'</td>'+
+      '<td class="r" style="color:var(--text2)">'+d.out.toLocaleString()+'</td>'+
+      '<td class="r" style="color:var(--text3)">'+d.lots+'</td>'+
+      '<td class="c"><input type="number" min="0" data-thresh="'+x.code+'" value="'+(custom?prodThreshold[x.code]:'')+'" placeholder="'+defaultThreshold()+'" '+
+        'style="width:64px;padding:6px 8px;font-size:14px;text-align:center;'+(custom?'border-color:var(--amber);color:var(--amber);font-weight:600;':'')+'"></td>'+
+      '<td><div class="bar"><div style="width:'+pct+'%;background:'+bcol+'"></div></div></td></tr>';
+  }).join('');
+  el('s-note').textContent='แสดง '+list.length+' จาก '+nprod+' รายการ — ช่องว่าง = ใช้เกณฑ์เริ่มต้น '+defaultThreshold();
+  // ผูก event ช่องเกณฑ์รายสินค้า
+  tb.querySelectorAll('[data-thresh]').forEach(function(inp){
+    inp.addEventListener('change',function(){
+      var p=this.getAttribute('data-thresh'), v=this.value.trim();
+      if(v==='') delete prodThreshold[p]; else prodThreshold[p]=parseInt(v,10);
+      renderStock();
+    });
+  });
+}
+el('s-search').addEventListener('input',function(){sState.search=this.value.trim();renderStock();});
+el('s-filter').addEventListener('change',function(){sState.filter=this.value;renderStock();});
+el('s-sort').addEventListener('change',function(){sState.sort=this.value;renderStock();});
+el('s-threshold').addEventListener('input',renderStock);
+el('s-low-card').onclick=function(){ el('s-filter').value='low';sState.filter='low';renderStock(); };
+
+/* ============ USERS (รายชื่อคนยิง) ============ */
+var USERS=['สมชาย','สมหญิง'];   // ผู้ใช้เริ่มต้น
+var curUser=USERS[0];
+function refreshUserDropdown(){
+  var sel=el('pda-user');
+  if(USERS.indexOf(curUser)<0) curUser=USERS[0]||'';
+  if(!sel) return;
+  sel.innerHTML=USERS.map(function(u){return '<option value="'+u+'">'+u+'</option>';}).join('');
+  sel.value=curUser;
+}
+el('pda-user') && (el('pda-user').addEventListener('change',function(){ curUser=this.value; }));
+function renderUserList(){
+  var box=el('u-list');
+  if(!USERS.length){ box.innerHTML='<div class="muted">ยังไม่มีผู้ใช้ — เพิ่มด้านบน</div>'; return; }
+  box.innerHTML='<table><tbody>'+USERS.map(function(u){
+    return '<tr><td>👤 '+u+'</td><td class="r"><button class="btn sm red" data-deluser="'+u+'">ลบ</button></td></tr>';
+  }).join('')+'</tbody></table>';
+  box.querySelectorAll('[data-deluser]').forEach(function(b){
+    b.onclick=function(){ var u=this.getAttribute('data-deluser');
+      USERS=USERS.filter(function(x){return x!==u;});
+      refreshUserDropdown(); renderUserList(); };
+  });
+}
+el('u-add').onclick=function(){
+  var n=el('u-name').value.trim();
+  var f=el('u-flash');
+  if(!n){ f.style.display='block'; f.className='flash err'; f.textContent='✕ ใส่ชื่อผู้ใช้'; return; }
+  if(USERS.indexOf(n)>=0){ f.style.display='block'; f.className='flash warn'; f.textContent='⚠ มีผู้ใช้ชื่อนี้แล้ว'; return; }
+  USERS.push(n); el('u-name').value='';
+  f.style.display='block'; f.className='flash ok'; f.textContent='✓ เพิ่มผู้ใช้ '+n;
+  refreshUserDropdown(); renderUserList();
+};
+el('u-name').addEventListener('keydown',function(e){ if(e.key==='Enter') el('u-add').click(); });
+function renderUserLog(){
+  var box=el('u-log');
+  if(!LOG.length){ box.innerHTML='<div class="muted">ยังไม่มีรายการ</div>'; return; }
+  box.innerHTML=LOG.slice(0,50).map(function(r){
+    var mark=r.ok?'<span style="color:var(--green)">'+r.m+'</span>':'<span style="color:var(--red)">✕'+r.m+'</span>';
+    var note=r.note?' <span style="color:var(--text3)">('+r.note+')</span>':'';
+    return r.t+' <span style="color:var(--blue)">['+r.user+']</span> '+mark+' '+r.full+note;
+  }).join('<br>');
+}
+function renderUsers(){ renderUserList(); renderUserLog(); }
+
+/* ============ RESERVATION ============ */
+var policy='allow';
+function stockInCount(p){ var c=0; for(var k in DB) if(DB[k].product===p&&DB[k].status==='in')c++; return c; }
+function reservedOf(p){ return RESV.filter(function(r){return r.product===p&&r.status==='รอส่ง';}).reduce(function(s,r){return s+r.qty;},0); }
+function renderResv(){
+  // dropdown
+  var sel=el('rv-prod'); var cur=sel.value;
+  sel.innerHTML=prodOrder.map(function(p){return '<option value="'+p+'">'+p+' (มี '+stockInCount(p)+')</option>';}).join('');
+  if(cur) sel.value=cur;
+  // stock table
+  var tb=el('rv-stock');
+  if(!prodOrder.length){ tb.innerHTML='<tr><td colspan="5" class="muted">ยังไม่มีสินค้า — รับเข้าก่อน</td></tr>'; }
+  else tb.innerHTML=prodOrder.map(function(p){
+    var onhand=stockInCount(p), rsv=reservedOf(p), avail=onhand-rsv;
+    var col,tag;
+    if(avail<0){col='var(--red)';tag='<span class="tag r">ค้างส่ง '+Math.abs(avail)+'</span>';}
+    else if(avail===0){col='var(--amber)';tag='<span class="tag a">จองเต็ม</span>';}
+    else if(avail<=10){col='var(--amber)';tag='<span style="color:var(--amber);font-size:10px">เหลือน้อย</span>';}
+    else {col='var(--green)';tag='<span style="color:var(--text3);font-size:10px">ปกติ</span>';}
+    return '<tr><td class="mono">'+p+'</td><td class="r">'+onhand+'</td>'+
+      '<td class="r" style="color:'+(rsv>0?'var(--blue)':'var(--text3)')+'">'+(rsv>0?rsv:'—')+'</td>'+
+      '<td class="r" style="font-weight:700;font-size:15px;color:'+col+'">'+avail+'</td><td class="c">'+tag+'</td></tr>';
+  }).join('');
+  // due
+  var byP={}; RESV.filter(function(r){return r.status==='รอส่ง';}).forEach(function(r){byP[r.product]=(byP[r.product]||0)+r.qty;});
+  var ks=Object.keys(byP);
+  if(!ks.length) el('rv-due-sum').innerHTML='<span style="color:var(--text3)">ยังไม่มีการจองที่รอส่ง</span>';
+  else { var tot=ks.reduce(function(s,k){return s+byP[k];},0);
+    el('rv-due-sum').innerHTML=ks.map(function(k){return '<div style="display:flex;justify-content:space-between;padding:2px 0;"><span class="mono">'+k+'</span><span style="font-weight:600">'+byP[k]+'</span></div>';}).join('')+
+      '<div style="display:flex;justify-content:space-between;padding-top:6px;margin-top:4px;border-top:1px solid var(--line);font-weight:700"><span>รวมต้องเตรียม</span><span style="color:var(--blue)">'+tot+' ชิ้น</span></div>'; }
+  // list
+  renderResvList();
+}
+function renderResvList(){
+  var box=el('rv-list');
+  if(!RESV.length){ box.innerHTML='<div class="muted">ยังไม่มีการจอง</div>'; return; }
+  var waiting=RESV.filter(function(r){return r.status==='รอส่ง';}), sent=RESV.filter(function(r){return r.status==='ส่งแล้ว';});
+  function row(r){ var done=r.status==='ส่งแล้ว';
+    var action = done
+      ? '<span style="color:var(--text3);font-size:12px">✓ ส่งแล้ว</span>'
+      : '<div style="display:flex;gap:5px;justify-content:flex-end;flex-wrap:wrap;">'+
+          '<button class="btn sm primary" data-deliver="'+r.id+'">ส่งมอบ</button>'+
+          '<button class="btn sm" data-editrv="'+r.id+'">แก้ไข</button>'+
+          '<button class="btn sm red" data-cancelrv="'+r.id+'">ยกเลิก</button>'+
+        '</div>';
+    return '<tr style="'+(done?'opacity:0.45':'')+'"><td class="mono">'+r.product+'</td><td class="r" style="font-weight:600">'+r.qty+'</td><td>'+r.cust+'</td><td style="color:var(--text2);font-size:12px">'+r.due+'</td><td class="r">'+action+'</td></tr>'; }
+  var h='<table><thead><tr><th>สินค้า</th><th class="r">จำนวน</th><th>ลูกค้า</th><th>กำหนดส่ง</th><th class="r">จัดการ</th></tr></thead><tbody>';
+  waiting.forEach(function(r){h+=row(r);}); sent.forEach(function(r){h+=row(r);});
+  box.innerHTML=h+'</tbody></table>';
+  box.querySelectorAll('[data-deliver]').forEach(function(b){ b.onclick=function(){ deliver(parseInt(this.getAttribute('data-deliver'),10)); }; });
+  box.querySelectorAll('[data-editrv]').forEach(function(b){ b.onclick=function(){ editResv(parseInt(this.getAttribute('data-editrv'),10)); }; });
+  box.querySelectorAll('[data-cancelrv]').forEach(function(b){ b.onclick=function(){ cancelResv(parseInt(this.getAttribute('data-cancelrv'),10)); }; });
+}
+// แก้ไขจอง: ดึงค่าขึ้นฟอร์มจองด้านบน + เข้าโหมดแก้ไข (กดจองเลย = บันทึกทับ)
+var editingResvId=null;
+function editResv(id){
+  var r=RESV.filter(function(x){return x.id===id;})[0]; if(!r||r.status==='ส่งแล้ว')return;
+  editingResvId=id;
+  if(prodOrder.indexOf(r.product)>=0) el('rv-prod').value=r.product;
+  el('rv-qty').value=r.qty; el('rv-cust').value=r.cust; el('rv-due').value=r.due;
+  el('rv-add').textContent='บันทึกการแก้ไข';
+  el('rv-add').classList.remove('green'); el('rv-add').classList.add('primary');
+  rvFlash('กำลังแก้ไขจองของ '+r.cust+' — ปรับค่าแล้วกด "บันทึกการแก้ไข" (หรือกดยกเลิกแก้ไขด้านล่าง)','info');
+  if(!el('rv-cancel-edit')){
+    var btn=document.createElement('button');
+    btn.id='rv-cancel-edit'; btn.className='btn sm'; btn.textContent='ยกเลิกการแก้ไข';
+    btn.style.marginTop='8px';
+    btn.onclick=exitEditMode;
+    el('rv-flash').parentNode.appendChild(btn);
+  } else el('rv-cancel-edit').style.display='';
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+function exitEditMode(){
+  editingResvId=null;
+  el('rv-add').textContent='จองเลย';
+  el('rv-add').classList.remove('primary'); el('rv-add').classList.add('green');
+  if(el('rv-cancel-edit')) el('rv-cancel-edit').style.display='none';
+  el('rv-qty').value='30'; el('rv-cust').value=''; el('rv-due').value='';
+  rvFlash('','');  el('rv-flash').style.display='none';
+}
+// ยกเลิกจอง: เอาออกจากรายการ (ของในคลังไม่กระทบ แค่ปลดล็อกยอดขายได้จริง)
+function cancelResv(id){
+  var r=RESV.filter(function(x){return x.id===id;})[0]; if(!r)return;
+  RESV=RESV.filter(function(x){return x.id!==id;});
+  if(editingResvId===id) exitEditMode();
+  rvFlash('🗑 ยกเลิกจองของ '+r.cust+' ('+r.product+' '+r.qty+' ชิ้น) — ยอดขายได้จริงคืนกลับแล้ว','info');
+  renderResv();
+}
+function deliver(id){
+  var r=RESV.filter(function(x){return x.id===id;})[0]; if(!r||r.status==='ส่งแล้ว')return;
+  // หยิบ SN ที่อยู่ในสต็อกของสินค้านั้น จำนวนเท่าที่จอง มายิงออก
+  var picked=0;
+  for(var k in DB){ if(picked>=r.qty)break; if(DB[k].product===r.product&&DB[k].status==='in'){ DB[k].status='out'; picked++;
+    LOG.unshift({t:nowT(),ts:nowTS(),user:'ส่งจอง',full:k,m:'OUT',ok:true,note:'ส่งมอบจอง '+r.cust,ref:r.cust}); } }
+  if(LOG.length>10000) LOG=LOG.slice(0,10000);
+  r.status='ส่งแล้ว';
+  if(editingResvId===id) exitEditMode();
+  renderResv(); syncAll();
+}
+el('rv-add') && (el('rv-add').onclick=function(){
+  if(!prodOrder.length){ rvFlash('✕ ยังไม่มีสินค้า — รับเข้าก่อน','err'); return; }
+  var p=el('rv-prod').value, qty=parseInt(el('rv-qty').value,10), cust=el('rv-cust').value.trim()||'(ไม่ระบุ)', due=el('rv-due').value.trim()||'-';
+  if(!(qty>0)){ rvFlash('✕ ใส่จำนวนให้ถูกต้อง','err'); return; }
+  // โหมดแก้ไข: บันทึกทับจองเดิม
+  if(editingResvId!==null){
+    var r=RESV.filter(function(x){return x.id===editingResvId;})[0];
+    if(r){
+      // เช็คบล็อกจองเกิน โดยไม่นับยอดของจองนี้เอง
+      var availE=stockInCount(p)-(reservedOf(p)-(r.product===p?r.qty:0));
+      if(policy==='block'&&qty>availE){ rvFlash('✕ แก้ไม่ได้ — ขายได้จริงเหลือ '+availE+' (บล็อกจองเกิน)','err'); return; }
+      r.product=p; r.qty=qty; r.cust=cust; r.due=due;
+      rvFlash('✓ แก้ไขจองของ '+cust+' เรียบร้อย','ok');
+      exitEditMode(); renderResv(); return;
+    }
+    exitEditMode();
+  }
+  var avail=stockInCount(p)-reservedOf(p);
+  if(policy==='block'&&qty>avail){ rvFlash('✕ จองไม่ได้ — ขายได้จริงเหลือ '+avail+' (บล็อกจองเกิน)','err'); return; }
+  RESV.push({id:rid++,product:p,qty:qty,cust:cust,due:due,status:'รอส่ง'});
+  var na=stockInCount(p)-reservedOf(p);
+  rvFlash('✓ จอง '+p+' '+qty+' ชิ้น — ขายได้จริงเหลือ '+na+(na<0?' (ค้างส่ง '+Math.abs(na)+')':''),'ok');
+  renderResv();
+});
+function rvFlash(msg,kind){ var f=el('rv-flash'); f.textContent=msg; f.className='flash '+(kind||''); }
+el('pol-allow') && (el('pol-allow').onclick=function(){ policy='allow'; this.classList.add('on'); el('pol-block').classList.remove('on'); });
+el('pol-block') && (el('pol-block').onclick=function(){ policy='block'; this.classList.add('on'); el('pol-allow').classList.remove('on'); });
+
+/* ============ REPORT รับ-ออก (จาก Log จริง) ============ */
+var rpRange='today';   // today | month | all
+var rpDir='both';      // both | in | out
+var rpOpen={};         // product -> กางอยู่ไหม (จำสถานะระหว่าง re-render)
+function rpFilteredLog(){
+  return LOG.filter(function(r){
+    if(!r.ok) return false;                          // เฉพาะรายการสำเร็จ
+    if(r.m!=='IN'&&r.m!=='OUT') return false;        // เฉพาะรับเข้า/จ่ายออก (ไม่เอา BAD)
+    if(rpRange==='today' && !(r.ts&&sameDay(r.ts))) return false;
+    if(rpRange==='month' && !(r.ts&&sameMonth(r.ts))) return false;
+    if(rpDir==='in' && r.m!=='IN') return false;
+    if(rpDir==='out' && r.m!=='OUT') return false;
+    return true;
+  });
+}
+function renderReport(){
+  var rows=rpFilteredLog();
+  var q=(el('rp-search').value||'').trim().toUpperCase();
+  // จัดกลุ่มตามสินค้า
+  var groups={};   // product -> {in:[], out:[]}
+  var cin=0,cout=0;
+  rows.forEach(function(r){
+    var p=parseCode(r.full);
+    var prod=p?p.product:(r.full||'?');
+    var sn=p?p.full:r.full;
+    if(q && prod.indexOf(q)<0 && sn.indexOf(q)<0) return;
+    if(!groups[prod]) groups[prod]={in:[],out:[]};
+    if(r.m==='IN'){ groups[prod].in.push({sn:sn,ts:r.ts,user:r.user,note:r.note}); cin++; }
+    else { groups[prod].out.push({sn:sn,ts:r.ts,user:r.user,note:r.note,ref:r.ref}); cout++; }
+  });
+  el('rp-cin').textContent=cin.toLocaleString();
+  el('rp-cout').textContent=cout.toLocaleString();
+  el('rp-sku').textContent=Object.keys(groups).length;
+
+  var prods=Object.keys(groups).sort();
+  if(!prods.length){
+    el('rp-groups').innerHTML='<div class="muted">ไม่มีรายการในช่วงที่เลือก — ลองยิงเข้า/ออกในแท็บ PDA หรือเปลี่ยนช่วงเป็น "ทั้งหมด"</div>';
+    el('rp-note').textContent=''; return;
+  }
+  function snList(arr,color){
+    // เรียง SN
+    arr.sort(function(a,b){ return a.sn<b.sn?-1:(a.sn>b.sn?1:0); });
+    var CAP=100, shown=arr.slice(0,CAP);
+    var h=shown.map(function(x){
+      var t=x.ts?fmtDate(x.ts):'';
+      return '<div style="display:flex;justify-content:space-between;gap:8px;padding:4px 0;border-bottom:1px solid var(--line);">'+
+        '<span class="mono" style="color:'+color+';font-size:13.5px">'+x.sn+'</span>'+
+        '<span style="color:var(--text3);font-size:12px;white-space:nowrap">'+t+(x.user?' · '+x.user:'')+'</span></div>';
+    }).join('');
+    if(arr.length>CAP){ h+='<div style="padding:8px 0 2px;font-size:12.5px;color:var(--text3);text-align:center;">… แสดง '+CAP+' จากทั้งหมด '+arr.length+' รายการ (ใช้ช่องค้นหาเพื่อกรองให้แคบลง)</div>'; }
+    return h;
+  }
+  el('rp-groups').innerHTML=prods.map(function(prod){
+    var g=groups[prod];
+    var open=rpOpen[prod]===true;   // เริ่มต้นพับ (false) จำสถานะที่ผู้ใช้กางไว้
+    var body='';
+    if(g.in.length){
+      body+='<div style="font-size:12px;color:var(--green);font-weight:600;margin:6px 0 2px;">▼ รับเข้า ('+g.in.length+')</div>'+snList(g.in,'var(--text)');
+    }
+    if(g.out.length){
+      body+='<div style="font-size:12px;color:var(--blue);font-weight:600;margin:10px 0 2px;">▲ จ่ายออก ('+g.out.length+')</div>'+snList(g.out,'var(--text)');
+    }
+    return '<div class="card" style="padding:0;margin-bottom:12px;overflow:hidden;">'+
+      '<div class="rp-head" data-prod="'+prod+'" style="display:flex;justify-content:space-between;align-items:center;gap:8px;padding:14px 16px;cursor:pointer;user-select:none;">'+
+        '<span style="display:flex;align-items:center;gap:9px;">'+
+          '<span class="rp-arrow" style="font-size:13px;color:var(--text3);transition:transform .15s;transform:rotate('+(open?'90deg':'0deg')+');">▶</span>'+
+          '<span class="mono" style="font-size:16px;font-weight:700;">'+prod+'</span>'+
+        '</span>'+
+        '<span style="font-size:13px;white-space:nowrap;">'+
+          (g.in.length?'<span class="tag g" style="margin-right:5px">รับ '+g.in.length+'</span>':'')+
+          (g.out.length?'<span class="tag b">ออก '+g.out.length+'</span>':'')+
+        '</span></div>'+
+      '<div class="rp-body" style="padding:'+(open?'0 16px 14px':'0 16px')+';max-height:'+(open?'none':'0')+';overflow:hidden;">'+body+'</div>'+
+    '</div>';
+  }).join('');
+  // ผูก toggle พับ/กาง
+  el('rp-groups').querySelectorAll('.rp-head').forEach(function(head){
+    head.onclick=function(){
+      var prod=this.getAttribute('data-prod');
+      rpOpen[prod]=!rpOpen[prod];
+      var body=this.parentNode.querySelector('.rp-body');
+      var arrow=this.querySelector('.rp-arrow');
+      if(rpOpen[prod]){ body.style.maxHeight='none'; body.style.padding='0 16px 14px'; arrow.style.transform='rotate(90deg)'; }
+      else { body.style.maxHeight='0'; body.style.padding='0 16px'; arrow.style.transform='rotate(0deg)'; }
+    };
+  });
+  var rangeTxt={today:'วันนี้',month:'เดือนนี้',all:'ทั้งหมด'}[rpRange];
+  el('rp-note').textContent='ช่วง: '+rangeTxt+' • รับเข้า '+cin+' · จ่ายออก '+cout+' รายการ • แตะหัวสินค้าเพื่อย่อ/ขยาย';
+}
+el('rp-search').addEventListener('input',renderReport);
+el('rp-today').onclick=function(){rpRange='today';this.classList.add('on');el('rp-month-btn').classList.remove('on');el('rp-all').classList.remove('on');renderReport();};
+el('rp-month-btn').onclick=function(){rpRange='month';this.classList.add('on');el('rp-today').classList.remove('on');el('rp-all').classList.remove('on');renderReport();};
+el('rp-all').onclick=function(){rpRange='all';this.classList.add('on');el('rp-today').classList.remove('on');el('rp-month-btn').classList.remove('on');renderReport();};
+el('rp-both').onclick=function(){rpDir='both';this.classList.add('on');el('rp-in').classList.remove('on');el('rp-out').classList.remove('on');renderReport();};
+el('rp-in').onclick=function(){rpDir='in';this.classList.add('on');el('rp-both').classList.remove('on');el('rp-out').classList.remove('on');renderReport();};
+el('rp-out').onclick=function(){rpDir='out';this.classList.add('on');el('rp-both').classList.remove('on');el('rp-in').classList.remove('on');renderReport();};
+el('rp-expand').onclick=function(){ rpFilteredProds().forEach(function(p){ rpOpen[p]=true; }); renderReport(); };
+el('rp-collapse').onclick=function(){ rpOpen={}; renderReport(); };
+function rpFilteredProds(){
+  var rows=rpFilteredLog(), q=(el('rp-search').value||'').trim().toUpperCase(), set={};
+  rows.forEach(function(r){ var p=parseCode(r.full); var prod=p?p.product:(r.full||'?'); var sn=p?p.full:r.full;
+    if(q && prod.indexOf(q)<0 && sn.indexOf(q)<0) return; set[prod]=1; });
+  return Object.keys(set);
+}
+
+/* ============ GENERATE BARCODE (ทดสอบ) ============ */
+function makeBarcodeInto(box,code,displayText){
+  var wrap=document.createElement('div');
+  wrap.style.cssText='background:#fff;border:1px solid var(--line);border-radius:10px;padding:14px 10px;text-align:center;';
+  var svg=document.createElementNS('http://www.w3.org/2000/svg','svg'); wrap.appendChild(svg);
+  // ค่าที่ฝังในบาร์โค้ด = code (ติดกัน), ข้อความใต้บาร์โค้ด = displayText (มีเว้นวรรค อ่านง่าย)
+  try{ JsBarcode(svg,code,{format:'CODE128',width:1.8,height:60,fontSize:14,margin:6,background:'#ffffff',lineColor:'#000000',text:displayText||code}); }
+  catch(e){ wrap.textContent=code+' (สร้างไม่ได้)'; }
+  box.appendChild(wrap);
+  return wrap;
+}
+function genFlash(msg,kind){ var f=el('gen-flash'); f.style.display='block'; f.className='flash '+(kind||''); f.textContent=msg; }
+el('gen-btn') && (el('gen-btn').onclick=function(){
+  var code=el('gen-code').value.trim().toUpperCase();
+  var box=el('gen-out'); box.innerHTML='';
+  if(typeof JsBarcode==='undefined'){ genFlash('✕ โหลดตัวสร้างบาร์โค้ดไม่สำเร็จ เช็คเน็ตแล้วรีเฟรช','err'); return; }
+  var p=parseCode(code);
+  if(!p){ genFlash('✕ รูปแบบควรเป็น สินค้า + ปีเดือน4หลัก + running4หลัก เช่น ABS-SC8 26020336','warn'); box.style.maxWidth='320px'; box.style.margin='16px auto 0'; makeBarcodeInto(box,code,code); return; }
+  // ค่าที่ฝังในบาร์โค้ด = รหัสติดกัน (p.full) / ป้ายใต้บาร์โค้ด = แบบมีเว้นวรรคอ่านง่าย
+  genFlash('✓ สร้างบาร์โค้ดของ '+p.product+' '+p.lot+p.run+' แล้ว — ค่าในบาร์โค้ดคือ '+p.full,'ok');
+  box.style.maxWidth='320px'; box.style.margin='16px auto 0';
+  makeBarcodeInto(box,p.full,p.product+' '+p.lot+p.run);
+});
+function renderGenLots(){
+  var sel=el('gen-lot-sel'); if(!sel) return;
+  var keys=[];
+  for(var pp in prodLots){ prodLots[pp].forEach(function(l){ keys.push(pp+'|'+l); }); }
+  if(!keys.length){ sel.innerHTML='<option value="">— ยังไม่มีล็อต ลงทะเบียนก่อน —</option>'; return; }
+  sel.innerHTML=keys.map(function(lk){ var pr=lk.split('|'); return '<option value="'+lk+'">'+pr[0]+' '+pr[1]+'</option>'; }).join('');
+}
+el('gen-multi') && (el('gen-multi').onclick=function(){
+  var lk=el('gen-lot-sel').value, n=parseInt(el('gen-count').value,10)||5;
+  var box=el('gen-multi-out'); box.innerHTML='';
+  if(!lk){ genFlash('✕ ยังไม่มีล็อต — ลงทะเบียนในแท็บรับล็อตก่อน','warn'); return; }
+  if(typeof JsBarcode==='undefined'){ genFlash('✕ โหลดตัวสร้างบาร์โค้ดไม่สำเร็จ','err'); return; }
+  var pr=lk.split('|');
+  n=Math.min(n,30);
+  for(var i=1;i<=n;i++){ var full=buildCode(pr[0],pr[1],pad(i)); makeBarcodeInto(box, full, pr[0]+' '+pr[1]+pad(i)); }
+  genFlash('✓ สร้าง '+n+' บาร์โค้ดของล็อต '+pr[0]+' '+pr[1],'ok');
+});
+
+/* ============ FILTER / BOM / ระบบกรอง / จ่ายเกิน ============ */
+// ไส้กรองนับจำนวน
+var FILTERS={ 'PP-12':50,'PRECARBON-12':50,'RESIN-12':50,'UF-12':50,'POSTCARBON-12':50,'CARBON-12':50,'NANO-PH-12':50,'RO-MEMBRANE':50,'MINERAL-12':50 };
+// ตู้ราย SN สำหรับเดโม (จ่ายออกพร้อมไส้)
+var FCAB={};
+['JX15-FT26080078','JX15-FT26080079','JX15-FT26080080','JX15-FT26080081','JX15-FT26080082','JX15-FT26080083'].forEach(function(s){FCAB[s]='in';});
+// BOM แยกตามระบบกรอง
+var FSYS={
+  'SYS-UF':{ name:'UF', bom:{'PP-12':1,'PRECARBON-12':1,'UF-12':1,'POSTCARBON-12':1} },
+  'SYS-NANO-PH':{ name:'NANO-PH', bom:{'PP-12':1,'CARBON-12':1,'NANO-PH-12':1,'POSTCARBON-12':1} },
+  'SYS-RO':{ name:'RO', bom:{'PP-12':1,'CARBON-12':1,'RO-MEMBRANE':1,'POSTCARBON-12':1,'MINERAL-12':1} }
+};
+var fCurSys=null, fMode='IN';
+var fOrder={ 'SYS-UF':{need:2,done:0}, 'SYS-NANO-PH':{need:1,done:0}, 'SYS-RO':{need:3,done:0} };
+var fPendingCab=null;
+
+function fNorm(s){ return String(s||'').trim().toUpperCase(); }
+function fFlash(box,msg,kind){ var f=el(box); f.innerHTML=msg; f.className='flash '+(kind||''); }
+
+// ยิงไส้กรองใส่จำนวน
+el('f-mode-in') && (el('f-mode-in').onclick=function(){ fMode='IN'; this.classList.add('green'); el('f-mode-out').classList.remove('primary'); });
+el('f-mode-out') && (el('f-mode-out').onclick=function(){ fMode='OUT'; this.classList.add('primary'); el('f-mode-in').classList.remove('green'); });
+function fFire(){
+  var code=fNorm(el('f-scan').value), qty=parseInt(el('f-qty').value,10);
+  if(!code){ fFlash('f-flash','✕ ยิง/ใส่รหัสไส้กรองก่อน','err'); return; }
+  if(!(qty>0)){ fFlash('f-flash','✕ ใส่จำนวนให้ถูกต้อง','err'); return; }
+  if(!(code in FILTERS)){ fFlash('f-flash','✕ ไม่พบไส้กรองรหัส '+code,'err'); return; }
+  if(fMode==='IN'){ FILTERS[code]+=qty; fFlash('f-flash','✓ รับเข้า '+code+' +'+qty+' (เหลือ '+FILTERS[code]+')','ok'); }
+  else {
+    if(FILTERS[code]<qty){ fFlash('f-flash','⚠ '+code+' มีแค่ '+FILTERS[code]+' ตัดออก '+qty+' ไม่ได้','warn'); return; }
+    FILTERS[code]-=qty; fFlash('f-flash','✓ จ่ายออก '+code+' −'+qty+' (เหลือ '+FILTERS[code]+')','ok');
+  }
+  el('f-scan').value=''; renderFilterAll();
+}
+el('f-fire') && (el('f-fire').onclick=fFire);
+el('f-qty') && el('f-qty').addEventListener('keydown',function(e){ if(e.key==='Enter') fFire(); });
+el('f-scan') && el('f-scan').addEventListener('keydown',function(e){ if(e.key==='Enter') el('f-qty').focus(); });
+document.querySelectorAll('.f-quick').forEach(function(b){ b.onclick=function(){ el('f-scan').value=this.getAttribute('data-c'); el('f-qty').focus(); }; });
+
+// เลือกระบบกรอง
+function fPickSys(code){
+  code=fNorm(code);
+  if(!(code in FSYS)){ fFlash('f-cabflash','✕ ไม่พบระบบ '+code,'err'); return; }
+  fCurSys=code; var s=FSYS[code];
+  var parts=Object.keys(s.bom).join(', ');
+  fFlash('f-cursys','✓ ระบบที่เลือก: <b>'+s.name+'</b> — จะตัดไส้: '+parts,'info');
+}
+document.querySelectorAll('.f-sys').forEach(function(b){ b.onclick=function(){ fPickSys(this.getAttribute('data-c')); }; });
+
+// ยิงตู้ จ่ายออกพร้อมไส้ (มีกันจ่ายเกิน 3 เคส)
+function fHideConfirm(){ el('f-confirm').style.display='none'; el('f-confirm').innerHTML=''; fPendingCab=null; }
+function fDoDeliver(sn){
+  FCAB[sn]='out';
+  var bom=FSYS[fCurSys].bom, parts=[];
+  for(var ik in bom){ FILTERS[ik]-=bom[ik]; parts.push(ik+' −'+bom[ik]); }
+  if(fOrder[fCurSys]) fOrder[fCurSys].done++;
+  LOG.unshift({t:nowT(),ts:nowTS(),user:curUser||'ระบบ',full:sn,m:'OUT',ok:true,note:'จ่ายตู้+ไส้ '+FSYS[fCurSys].name,ref:''});
+  if(LOG.length>10000) LOG.pop();
+  fFlash('f-cabflash','✓ จ่ายตู้ '+sn+' [ระบบ '+FSYS[fCurSys].name+']<br><span style="font-size:12px;">ตัดไส้: '+parts.join(', ')+'</span>','ok');
+  renderFilterAll();
+}
+function fShowConfirm(msg,onYes){
+  var box=el('f-confirm'); box.style.display='block';
+  box.innerHTML='<div class="flash warn" style="margin-bottom:8px;">'+msg+'</div>'+
+    '<div style="display:flex;gap:8px;"><button class="btn amber" id="f-cf-yes" style="flex:1;">ยืนยันจ่ายเกิน</button><button class="btn" id="f-cf-no" style="flex:1;">ยกเลิก</button></div>';
+  el('f-cf-yes').onclick=function(){ fHideConfirm(); onYes(); };
+  el('f-cf-no').onclick=function(){ fHideConfirm(); fFlash('f-cabflash','ยกเลิกการจ่าย','info'); };
+}
+function fFireCab(sn){
+  sn=fNorm(sn); fHideConfirm();
+  if(!sn){ fFlash('f-cabflash','✕ ยิง SN ตู้ก่อน','err'); return; }
+  if(!fCurSys){ fFlash('f-cabflash','⚠ ยังไม่เลือกระบบกรอง! เลือกระบบก่อน (จังหวะ 1)','warn'); return; }
+  // เคส 3: เกินสต็อก
+  if(!(sn in FCAB)){ fFlash('f-cabflash','✕ ไม่พบ SN '+sn+' ในสต็อก — จ่ายไม่ได้ (เกินสต็อก)','err'); return; }
+  if(FCAB[sn]!=='in'){ fFlash('f-cabflash','✕ '+sn+' จ่ายไปแล้ว ไม่อยู่ในสต็อก','err'); return; }
+  // เคส 1: ไส้ไม่พอ → บล็อก
+  var bom=FSYS[fCurSys].bom, lack=[];
+  for(var ik in bom){ if((FILTERS[ik]||0)<bom[ik]) lack.push(ik+' (มี '+(FILTERS[ik]||0)+' ต้องใช้ '+bom[ik]+')'); }
+  if(lack.length){ fFlash('f-cabflash','🚫 ไส้ไม่พอ — บล็อกการจ่าย<br><span style="font-size:12px;">ขาด: '+lack.join(', ')+'</span>','err'); return; }
+  // เคส 2: เกิน order → เตือนยืนยัน
+  if(fOrder[fCurSys] && fOrder[fCurSys].done>=fOrder[fCurSys].need){
+    fShowConfirm('⚠ order ระบบ '+FSYS[fCurSys].name+' สั่งแค่ '+fOrder[fCurSys].need+' ตู้ ยิงครบแล้ว — ตู้นี้จะเกิน ยืนยันจ่ายเกินไหม?', function(){ fDoDeliver(sn); });
+    return;
+  }
+  fDoDeliver(sn);
+}
+el('f-cabfire') && (el('f-cabfire').onclick=function(){ fFireCab(el('f-cabscan').value); el('f-cabscan').value=''; });
+el('f-cabscan') && el('f-cabscan').addEventListener('keydown',function(e){ if(e.key==='Enter'){ fFireCab(this.value); this.value=''; }});
+document.querySelectorAll('.f-cab').forEach(function(b){ b.onclick=function(){ fFireCab(this.getAttribute('data-c')); }; });
+el('f-refill') && (el('f-refill').onclick=function(){ for(var k in FILTERS) FILTERS[k]+=20; renderFilterAll(); fFlash('f-flash','✓ จำลองรับไส้เข้า +20 ทุกตัว','ok'); });
+
+function renderFilterAll(){
+  // stats
+  var tot=0; for(var k in FILTERS) tot+=FILTERS[k];
+  var ci=0; for(var c in FCAB) if(FCAB[c]==='in') ci++;
+  if(el('f-types')) el('f-types').textContent=Object.keys(FILTERS).length;
+  if(el('f-total')) el('f-total').textContent=tot.toLocaleString();
+  if(el('f-cab')) el('f-cab').textContent=ci;
+  // ยอดไส้
+  if(el('f-stock')){
+    var h='<table><tbody>';
+    Object.keys(FILTERS).forEach(function(k){
+      var low=FILTERS[k]<=10;
+      h+='<tr><td class="mono" style="font-size:12.5px">'+k+'</td><td class="r" style="font-weight:600;color:'+(low?'var(--amber)':'var(--text)')+'">'+FILTERS[k]+(low?' ⚠':'')+'</td></tr>';
+    });
+    el('f-stock').innerHTML=h+'</tbody></table>';
+  }
+  // BOM
+  if(el('f-bom')){
+    var bh='';
+    Object.keys(FSYS).forEach(function(sk){
+      var parts=Object.keys(FSYS[sk].bom).map(function(ik){return ik;});
+      bh+='<div><b style="color:var(--text)">'+FSYS[sk].name+'</b> = '+parts.join(' + ')+'</div>';
+    });
+    el('f-bom').innerHTML=bh;
+  }
+  // order progress
+  if(el('f-order')){
+    var oh='';
+    Object.keys(fOrder).forEach(function(sk){
+      var o=fOrder[sk], done=o.done>=o.need, over=o.done>o.need;
+      oh+='<div style="display:flex;justify-content:space-between;"><span class="mono">'+FSYS[sk].name+'</span><span style="font-weight:600;color:'+(over?'var(--red)':(done?'var(--green)':'var(--text3)'))+'">'+o.done+'/'+o.need+(over?' (เกิน '+(o.done-o.need)+')':(done?' ✓':''))+'</span></div>';
+    });
+    el('f-order').innerHTML=oh;
+  }
+}
+
+/* ============ SYNC ALL ============ */
+function syncAll(){
+  // PDA + Camera stats (ใช้ตัวเลขชุดเดียวกัน)
+  var t=0,ci=0,co=0,cb=0;
+  for(var k in DB){ t++; if(DB[k].status==='in')ci++; else if(DB[k].status==='out')co++; else if(DB[k].status==='bad')cb++; }
+  if(el('p-total')){ el('p-total').textContent=t; el('p-in').textContent=ci; el('p-out').textContent=co; el('p-bad').textContent=cb; }
+  if(el('c-total')){ el('c-total').textContent=t; el('c-in').textContent=ci; el('c-out').textContent=co; el('c-bad').textContent=cb; }
+  // refresh visible views (guard เผื่อ section ถูกตัดออกในเวอร์ชัน lite)
+  function viewOn(v){ var n=document.querySelector('.view[data-view="'+v+'"]'); return n&&n.classList.contains('on'); }
+  if(viewOn('stock')) renderStock();
+  if(viewOn('resv')) renderResv();
+  if(viewOn('report')) renderReport();
+  if(viewOn('users')) renderUserLog();
+  renderLotTable();
+}
+
+el('global-reset').onclick=function(){
+  DB={}; prodOrder=[]; prodLots={}; LOG=[]; RESV=[]; rid=1; blocked=0; pdaCount=0;
+  if(el('pda-count')) el('pda-count').textContent='0';
+  if(el('cam-count')) el('cam-count').textContent='0';
+  pdaResult('','พร้อมยิง','ลงทะเบียน + รับเข้าในแท็บ "รับล็อต" ก่อน');
+  if(typeof camResult==='function') camResult('','พร้อมสแกน','ลงทะเบียน + รับเข้าในแท็บ "รับล็อต" ก่อน');
+  lotFlash('รีเซ็ตแล้ว — เริ่มลงทะเบียนใหม่ได้','');
+  syncAll(); renderUsers();
+};
+
+/* init */
+refreshUserDropdown();
+renderUserList();
+renderFilterAll();
+syncAll();
+refreshCamUser();
+</script>
+</body>
+</html>

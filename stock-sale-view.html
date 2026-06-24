@@ -66,8 +66,8 @@
   </header>
 
   <div class="stats">
-    <div class="stat"><div class="l">ขายได้จริงรวม</div><div class="v" style="color:var(--green)" id="k-in">0</div></div>
-    <div class="stat"><div class="l">ติดจองรวม</div><div class="v" style="color:var(--blue)" id="k-resv">0</div></div>
+    <div class="stat"><div class="l">รายการสินค้า</div><div class="v" id="k-prod">0</div></div>
+    <div class="stat"><div class="l">คงเหลือรวม</div><div class="v" style="color:var(--green)" id="k-in">0</div></div>
     <div class="stat tap" id="k-low-card"><div class="l" style="color:var(--amber)">เหลือน้อย ⚠</div><div class="v" style="color:var(--amber)" id="k-low">0</div></div>
   </div>
 
@@ -88,7 +88,7 @@
 
   <div class="card">
     <table>
-      <thead><tr><th>สินค้า</th><th class="r">คงเหลือ</th><th class="r">ติดจอง</th><th class="r">ขายได้จริง</th><th style="width:96px">สถานะ</th></tr></thead>
+      <thead><tr><th>สินค้า</th><th class="r">คงเหลือ</th><th style="width:110px">สถานะ</th></tr></thead>
       <tbody id="rows"></tbody>
     </table>
     <div id="empty" class="muted" style="display:none;">ไม่พบสินค้าตามเงื่อนไข</div>
@@ -113,37 +113,34 @@
    ตอนนี้ใช้ข้อมูลจำลองเพื่อให้เห็นหน้าตา
    ============================================================ */
 
-// ข้อมูลจำลอง: คงเหลือจริงในคลัง (onhand) + ยอดจองที่รอส่ง (reserved) + เกณฑ์เตือน
-// ขายได้จริง (available) = onhand - reserved คำนวณตอนแสดง
+// ข้อมูลจำลอง: คงเหลือจริงในคลัง (onhand) + เกณฑ์เตือนเหลือน้อยรายสินค้า
 var STOCK=[
-  {code:'WFP-3500', onhand:142, reserved:30,  threshold:50},
-  {code:'WFP-2200', onhand:50,  reserved:42,  threshold:30},
-  {code:'ABS-SC8',  onhand:95,  reserved:0,   threshold:100},
-  {code:'ABS-CX5',  onhand:210, reserved:60,  threshold:50},
-  {code:'RO-900',   onhand:20,  reserved:20,  threshold:20},
-  {code:'UV-750',   onhand:18,  reserved:0,   threshold:20},
-  {code:'CER-450',  onhand:340, reserved:120, threshold:40},
-  {code:'MIN-X3',   onhand:27,  reserved:5,   threshold:25},
-  {code:'ALK-Z9',   onhand:64,  reserved:0,   threshold:30},
-  {code:'PRO-5000', onhand:25,  reserved:20,  threshold:15}
+  {code:'WFP-3500', onhand:142, threshold:50},
+  {code:'WFP-2200', onhand:50,  threshold:30},
+  {code:'ABS-SC8',  onhand:95,  threshold:100},
+  {code:'ABS-CX5',  onhand:210, threshold:50},
+  {code:'RO-900',   onhand:20,  threshold:20},
+  {code:'UV-750',   onhand:18,  threshold:20},
+  {code:'CER-450',  onhand:340, threshold:40},
+  {code:'MIN-X3',   onhand:27,  threshold:25},
+  {code:'ALK-Z9',   onhand:64,  threshold:30},
+  {code:'PRO-5000', onhand:25,  threshold:15}
 ];
 
 var state={search:'',filter:'all',sort:'low-first'};
 function el(id){return document.getElementById(id);}
-function availOf(s){ return s.onhand - s.reserved; }
 
 function statusOf(s){
-  var avail=availOf(s);
-  if(avail<=0) return 'zero';
-  if(avail<=s.threshold) return 'low';
+  if(s.onhand<=0) return 'zero';
+  if(s.onhand<=s.threshold) return 'low';
   return 'ok';
 }
 
 function render(){
-  var totAvail=0,totReserved=0,low=0;
-  STOCK.forEach(function(s){ var a=availOf(s); totAvail+=Math.max(0,a); totReserved+=s.reserved; if(a<=s.threshold) low++; });
-  el('k-in').textContent=totAvail.toLocaleString();
-  el('k-resv').textContent=totReserved.toLocaleString();
+  var totOnhand=0,low=0;
+  STOCK.forEach(function(s){ totOnhand+=s.onhand; if(s.onhand<=s.threshold) low++; });
+  el('k-prod').textContent=STOCK.length;
+  el('k-in').textContent=totOnhand.toLocaleString();
   el('k-low').textContent=low;
 
   var list=STOCK.filter(function(s){
@@ -154,8 +151,8 @@ function render(){
     if(state.filter==='ok') return st==='ok';
     return true;
   }).slice().sort(function(a,b){
-    if(state.sort==='low-first') return availOf(a)-availOf(b);
-    if(state.sort==='high-first') return availOf(b)-availOf(a);
+    if(state.sort==='low-first') return a.onhand-b.onhand;
+    if(state.sort==='high-first') return b.onhand-a.onhand;
     if(state.sort==='name') return a.code<b.code?-1:1;
     return 0;
   });
@@ -165,19 +162,16 @@ function render(){
   el('empty').style.display='none';
 
   tb.innerHTML=list.map(function(s){
-    var avail=availOf(s), st=statusOf(s);
+    var st=statusOf(s);
     var col = st==='zero'?'var(--red)':(st==='low'?'var(--amber)':'var(--text)');
     var tag = st==='zero'?'<span class="tag r">หมด</span>':(st==='low'?'<span class="tag a">เหลือน้อย</span>':'<span style="color:var(--text3);font-size:13px">พอขาย</span>');
-    var resvCell = s.reserved>0 ? '<span style="color:var(--blue)">'+s.reserved.toLocaleString()+'</span>' : '<span style="color:var(--text3)">—</span>';
     return '<tr>'+
       '<td class="mono" style="font-size:15px;">'+s.code+'</td>'+
-      '<td class="r" style="color:var(--text2)">'+s.onhand.toLocaleString()+'</td>'+
-      '<td class="r">'+resvCell+'</td>'+
-      '<td class="r" style="font-weight:700;font-size:18px;color:'+col+'">'+avail.toLocaleString()+'</td>'+
+      '<td class="r" style="font-weight:700;font-size:18px;color:'+col+'">'+s.onhand.toLocaleString()+'</td>'+
       '<td>'+tag+'</td>'+
     '</tr>';
   }).join('');
-  el('note').textContent='แสดง '+list.length+' จาก '+STOCK.length+' รายการ • ติดจองรวม '+totReserved.toLocaleString()+' ชิ้น';
+  el('note').textContent='แสดง '+list.length+' จาก '+STOCK.length+' รายการ';
 }
 
 el('search').addEventListener('input',function(){state.search=this.value.trim();render();});
